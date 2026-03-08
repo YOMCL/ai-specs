@@ -1,6 +1,6 @@
 ---
 description: Directs all AI agents to use the consolidated rules in base-standards.mdc
-globs: 
+globs:
 alwaysApply: true
 ---
 
@@ -8,7 +8,7 @@ alwaysApply: true
 
 All AI agents working on this project must follow the comprehensive development rules and guidelines defined in:
 
-**📋 [ai-specs/specs/base-standards.mdc](/Users/alvaromoya/projects/versiones ejercicios/AI4Devs-LTI/ai-specs/specs/base-standards.mdc)**
+**ai-specs/specs/base-standards.mdc**
 
 ## Key Directive
 
@@ -22,7 +22,7 @@ All AI agents working on this project must follow the comprehensive development 
 - **Language Standards**: English-only requirement for all technical artifacts
 - **Specific Standards**: Links to detailed standards for:
   - Backend development (API, database patterns, testing, security)
-  - Frontend development (React components, UI/UX guidelines)
+  - Frontend development (React/Next.js components, UI/UX guidelines)
   - Documentation (structure, formatting, maintenance)
 
 ## Compliance

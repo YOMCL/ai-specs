@@ -1,0 +1,1 @@
+../../ai-specs/.commands/review-architecture.md

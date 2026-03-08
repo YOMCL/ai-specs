@@ -181,31 +181,31 @@ PUT /positions/:id
 **Server-side Validation (implemented in `validatePositionUpdate`):**
 
 - **Title**: If provided, required, 1-100 characters, non-empty string
-  - Error: `"El título es obligatorio y debe ser una cadena válida"` or `"El título no puede exceder 100 caracteres"`
+  - Error: `"Title is required and must be a valid string"` or `"Title cannot exceed 100 characters"`
 - **Description**: If provided, required, non-empty string
-  - Error: `"La descripción es obligatoria y debe ser una cadena válida"`
+  - Error: `"Description is required and must be a valid string"`
 - **Location**: If provided, required, non-empty string
-  - Error: `"La ubicación es obligatoria y debe ser una cadena válida"`
+  - Error: `"Location is required and must be a valid string"`
 - **JobDescription**: If provided, required, non-empty string
-  - Error: `"La descripción del trabajo es obligatoria y debe ser una cadena válida"`
+  - Error: `"Job description is required and must be a valid string"`
 - **Status**: Must be valid enum value (`Open`, `Contratado`, `Cerrado`, `Borrador`)
-  - Error: `"Estado inválido. Debe ser uno de: Open, Contratado, Cerrado, Borrador"`
+  - Error: `"Invalid status. Must be one of: Open, Contratado, Cerrado, Borrador"`
 - **isVisible**: Must be boolean
-  - Error: `"isVisible debe ser un valor booleano"`
+  - Error: `"isVisible must be a boolean value"`
 - **companyId**: Must be positive integer if provided
-  - Error: `"companyId debe ser un número entero positivo"`
+  - Error: `"companyId must be a positive integer"`
 - **interviewFlowId**: Must be positive integer if provided
-  - Error: `"interviewFlowId debe ser un número entero positivo"`
+  - Error: `"interviewFlowId must be a positive integer"`
 - **salaryMin**: Must be >= 0 if provided
-  - Error: `"El salario mínimo debe ser un número válido mayor o igual a 0"`
+  - Error: `"Minimum salary must be a valid number greater than or equal to 0"`
 - **salaryMax**: Must be >= 0 if provided
-  - Error: `"El salario máximo debe ser un número válido mayor o igual a 0"`
+  - Error: `"Maximum salary must be a valid number greater than or equal to 0"`
 - **salaryMin <= salaryMax**: If both provided, minimum cannot exceed maximum
-  - Error: `"El salario mínimo no puede ser mayor que el máximo"`
+  - Error: `"Minimum salary cannot be greater than maximum salary"`
 - **applicationDeadline**: Must be valid date, cannot be in the past
-  - Error: `"Fecha límite inválida"` or `"La fecha límite no puede ser anterior a hoy"`
+  - Error: `"Invalid deadline date"` or `"Application deadline cannot be in the past"`
 - **employmentType**: Must be non-empty string if provided
-  - Error: `"El tipo de empleo debe ser una cadena válida"`
+  - Error: `"Employment type must be a valid string"`
 - **Text fields**: Must be strings if provided (requirements, responsibilities, benefits, companyDescription, contactInfo)
 
 **Client-side Validation:**
@@ -378,7 +378,7 @@ PUT /positions/:id
 1. **Partial Updates**: The implementation supports partial updates - only fields provided in the request body are updated
 2. **Optional Field Handling**: Empty strings are converted to `null` for optional fields on the frontend
 3. **Date Handling**: Dates are converted from ISO format to date string for input field, and back to ISO for API
-4. **Error Messages**: Validation errors are in Spanish to match the original user story language
+4. **Error Messages**: All validation errors must be in English, following project language standards
 5. **Status Default**: Default status is `Borrador` (Draft) if not provided
 6. **Navigation**: After successful update, user is redirected to positions list after 2 seconds
 7. **Validation Strategy**: Validation only occurs for fields that are provided (`!== undefined`), allowing partial updates

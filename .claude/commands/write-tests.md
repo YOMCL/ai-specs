@@ -1,0 +1,1 @@
+../../ai-specs/.commands/write-tests.md

@@ -1,312 +1,418 @@
-# AI Specifications & Development Rules
+# AI Specs — Specs-Driven Development Framework
 
-This repository contains a comprehensive set of development rules, standards, and AI agent configurations designed to work seamlessly with multiple AI coding copilots. The setup is portable and can be imported into any project to provide consistent, high-quality AI-assisted development.
-
-## 📁 Repository Structure
-
-```
-.
-├── ai-specs/                    # Main directory with all rules and configurations
-│   ├── specs/                   # Development standards and specifications
-│   │   ├── base-standards.mdc   # Core development rules (single source of truth)
-│   │   ├── backend-standards.mdc
-│   │   ├── frontend-standards.mdc
-│   │   ├── documentation-standards.mdc
-│   │   ├── api-spec.yml         # OpenAPI specification
-│   │   ├── data-model.md        # Database and domain models
-│   │   ├── development_guide.md
-│   │   └── prompts.md           # Reusable prompt templates
-│   └── changes/                 # Feature implementation plans
-│       └── SCRUM-10_backend.md  # Demo: Position update feature plan
-│
-├── AGENTS.md                    # Generic agent configuration
-├── CLAUDE.md                    # Claude-specific configuration
-├── codex.md                     # GitHub Copilot/Codex configuration
-└── GEMINI.md                    # Gemini-specific configuration
-```
-
-## 🤖 Multi-Copilot Support
-
-This repository uses **symbolic links** or **naming conventions** to support multiple AI coding copilots without duplication:
-
-- **`AGENTS.md`** → Generic agent rules (works with most copilots)
-- **`CLAUDE.md`** → Optimized for Claude/Cursor
-- **`codex.md`** → Optimized for GitHub Copilot/Codex
-- **`GEMINI.md`** → Optimized for Google Gemini
-
-All these files reference the same core rules in `ai-specs/specs/base-standards.mdc`, ensuring consistency across different AI tools while allowing copilot-specific customizations.
-
-### Why This Approach?
-
-✅ **Single Source of Truth**: Core rules maintained in one place (`base-standards.mdc`)  
-✅ **Copilot Compatibility**: Each AI tool finds its configuration using its preferred naming convention  
-✅ **Zero Configuration**: Import into a new project and it works immediately  
-✅ **Easy Updates**: Update rules once, all copilots benefit  
-✅ **Portable**: Copy this structure to any project  
-
-## 🚀 Quick Start
-
-### 1. Import Into Your Project
-
-```bash
-# Clone or copy this repository into your project
-cp -r LIDR-ai-specs/* your-project/
-
-# The AI copilot will automatically detect the relevant configuration file
-```
-
-### 2. Verify Configuration
-
-Your AI copilot will automatically load:
-- **Claude/Cursor**: `CLAUDE.md` → `ai-specs/specs/base-standards.mdc`
-- **GitHub Copilot**: `codex.md` → `ai-specs/specs/base-standards.mdc`
-- **Gemini**: `GEMINI.md` → `ai-specs/specs/base-standards.mdc`
-
-All paths and rules are configured to work seamlessly without manual adjustments.
-
-## 💡 Usage: Command-Based Development Workflow
-
-The most efficient way to work with this setup is using a command-based workflow:
-
-### Step 1: Enrich the User Story (Optional)
-
-If your user story lacks detail or acceptance criteria, use the **`enrich-us`** command to enhance it:
-
-```
-/enrich-us SCRUM-10
-```
-
-This command analyzes the user story and generates:
-- Detailed acceptance criteria
-- Edge cases and validation rules
-- Technical considerations
-- Testing scenarios
-
-**Note**: Skip this step if your user story already has sufficient depth and clear requirements.
-
-### Step 2: Plan the Feature
-
-Use **`plan-ticket`** commands to generate detailed implementation plans:
-
-```
-plan-backend-ticket SCRUM-10
-```
-
-or
-
-```
-plan-frontend-ticket SCRUM-15
-```
-
-This creates a comprehensive, step-by-step implementation plan in `ai-specs/changes/`.
-
-### Step 3: Implement the Feature
-
-Reference the generated plan and execute:
-
-```
-develop-backend @SCRUM-10_backend.md
-```
-
-or
-
-```
-develop-frontend @SCRUM-15_frontend.md
-```
-
-The AI will follow the plan precisely, implementing each step with TDD, proper testing, and documentation updates.
-
-### Example: Implementing SCRUM-10 (Position Update Feature)
-
-#### Step 1: Enrich the User Story (Optional)
-
-**You say:**
-```
-/enrich-us SCRUM-10
-```
-
-**AI enhances** the user story with detailed acceptance criteria and technical considerations (skip if already detailed).
-
-#### Step 2: Generate the Plan
-
-**You say:**
-```
-/plan-backend-ticket SCRUM-10
-```
-
-**AI generates:**
-- Analyzes the ticket requirements
-- Creates `ai-specs/changes/SCRUM-10_backend.md` with:
-  - Architecture context
-  - Step-by-step implementation instructions
-  - Complete test specifications (validation, service, controller layers)
-  - API documentation updates
-  - Validation rules
-  - Error handling strategies
-
-#### Step 3: Implement Following the Plan
-
-**You say:**
-```
-/develop-backend @SCRUM-10_backend.md
-```
-
-**AI executes:**
-1. Creates feature branch `feature/SCRUM-10-backend`
-2. Implements validation function with comprehensive rules
-3. Implements service layer with business logic
-4. Implements controller with HTTP handling
-5. Adds route configuration
-6. Writes 90%+ test coverage across all layers
-7. Updates API documentation
-8. Runs tests and verifies implementation
-9. Commits and pushes (configurable to wait until confirmation)
-
-### 📝 Demo Enriched User Story
-
-Check out **`ai-specs/changes/SCRUM-10-Position-Update.md`** for a complete example of what an enriched user story looks like. This comprehensive document includes:
-
-- **User Story**: Clear description with persona, goal, and benefit
-- **Technical Specification**: Complete technical implementation details
-- **API Endpoint Documentation**: Request/response formats, status codes, and error handling
-- **Database Fields**: All updateable fields with validation rules
-- **Validation Rules**: Server-side and client-side validation requirements
-- **Security Requirements**: Authentication, authorization, and input sanitization needs
-- **Testing Requirements**: Unit tests, integration tests, and manual testing scenarios
-- **Acceptance Criteria**: Clear, testable acceptance criteria for each requirement
-- **Non-Functional Requirements**: Usability, performance, reliability, and security standards
-- **Definition of Done**: Complete checklist for feature completion
-
-This enriched document transforms a simple user story into a detailed specification that provides all the context needed for autonomous implementation by AI agents or developers.
-
-### 📋 Demo Implementation Plan
-
-Check out **`ai-specs/changes/SCRUM-10_backend.md`** for a complete example of what a feature implementation plan looks like. This comprehensive plan includes:
-
-- **Architecture Context**: Layers, components, and dependencies
-- **Step-by-Step Instructions**: Validation → Service → Controller → Routes → Tests → Documentation
-- **Complete Code Examples**: Full implementations for each layer
-- **Comprehensive Test Specifications**: 90%+ coverage requirements with example tests
-- **Error Handling**: HTTP status codes, error messages, and response formats
-- **Business Rules**: Validation requirements and constraints
-- **Testing Checklist**: Unit, manual, integration, and regression tests
-
-This plan demonstrates how detailed and actionable the generated plans are, enabling autonomous implementation by AI agents.
-
-## 📖 Core Development Rules
-
-All development follows principles defined in `ai-specs/specs/base-standards.mdc`:
-
-### Key Principles
-
-1. **Small Tasks, One at a Time**: Baby steps, never skip ahead
-2. **Test-Driven Development (TDD)**: Write failing tests first
-3. **Type Safety**: Fully typed code (TypeScript)
-4. **Clear Naming**: Descriptive variables and functions
-5. **English Only**: All code, comments, documentation, and messages in English
-6. **90%+ Test Coverage**: Comprehensive testing across all layers
-7. **Incremental Changes**: Focused, reviewable modifications
-
-### Specific Standards
-
-- **Backend Standards**: `ai-specs/specs/backend-standards.mdc`
-  - API development patterns
-  - Database best practices
-  - Security guidelines
-  - Testing requirements
-
-- **Frontend Standards**: `ai-specs/specs/frontend-standards.mdc`
-  - React component patterns
-  - UI/UX guidelines
-  - State management
-  - Component testing
-
-- **Documentation Standards**: `ai-specs/specs/documentation-standards.mdc`
-  - Technical documentation structure
-  - API documentation (OpenAPI)
-  - Code documentation
-  - Maintenance guidelines
-
-## 🎯 Benefits
-
-### For Developers
-- ✅ **Consistent Code Quality**: AI follows the same standards every time
-- ✅ **Comprehensive Testing**: Automatic 90%+ coverage across all layers
-- ✅ **Complete Documentation**: API specs updated automatically
-- ✅ **Faster Onboarding**: New team members reference the same rules
-- ✅ **Reduced Review Time**: Code follows established patterns
-
-### For Teams
-- ✅ **Copilot Flexibility**: Team members can use their preferred AI tool
-- ✅ **Knowledge Preservation**: Standards documented, not in people's heads
-- ✅ **Quality Consistency**: Same standards regardless of who (or what) writes code
-- ✅ **Easier Code Reviews**: Clear expectations and patterns
-- ✅ **Scalable Practices**: Standards scale with the team
-
-### For Projects
-- ✅ **Maintainable Codebase**: Clean architecture and clear separation of concerns
-- ✅ **Production-Ready Code**: TDD, error handling, and validation built-in
-- ✅ **Living Documentation**: API specs and data models always current
-- ✅ **Faster Feature Development**: Autonomous AI implementation from plans
-- ✅ **Lower Technical Debt**: Best practices enforced from day one
-
-## 🔧 Customization
-
-### Adapting to Your Project
-
-1. **Update `base-standards.mdc`**: Modify core principles to match your needs
-2. **Add Domain Rules**: Include project-specific business rules
-3. **Extend Standards**: Add technology-specific guidelines (Vue, Angular, etc.)
-4. **Create Templates**: Add prompt templates in `prompts.md`
-5. **Link Resources**: Reference your project's specific documentation
-
-### Maintaining Standards
-
-- **Single Source of Truth**: Always update `base-standards.mdc` first
-- **Version Control**: Track changes to standards like code
-- **Team Review**: Standards changes should be reviewed like pull requests
-- **Documentation**: Keep examples current with actual implementation
-
-## 📚 Technical context
-
-### Reference Examples (from LIDR Project)
-
-The following files are included as **reference examples** from the LIDR project. You should create your own versions tailored to your specific project:
-
-- **API Specification**: `ai-specs/specs/api-spec.yml` (OpenAPI 3.0 format)
-  - *Create your own API spec documenting your project's endpoints*
-- **Data Models**: `ai-specs/specs/data-model.md` (Database schemas, domain models)
-  - *Document your database structure and domain entities*
-- **Development Guide**: `ai-specs/specs/development_guide.md` (Setup, workflows)
-  - *Write setup instructions specific to your tech stack*
-
-
-## 🤝 Contributing
-
-When contributing to the standards:
-
-1. Update `base-standards.mdc` (single source of truth)
-2. Test with multiple AI copilots to ensure compatibility
-3. Update examples in `changes/` folder if needed
-4. Document breaking changes clearly
-5. Follow the same standards you're defining!
-
-## 📄 License
-
-Copyright (c) 2025 LIDR.co
-Licensed under the MIT License
-
-**English:**
-
-The content of this repository is part of the AI4Devs program by LIDR.co. If you want to learn to code with AI like the pros and get more templates and resources like these, you can find all the information on the official website: https://lidr.co/ia-devs
-
-**Español:**
-
-El contenido de este repositorio es parte del programa AI4Devs de LIDR.co. Si quieres aprender a programar con IA como los pros, y obtener más plantillas y recursos como estos, puedes encontrar toda la información en la página oficial: https://lidr.co/ia-devs
+A portable framework of development rules, AI agent definitions, and workflow commands designed for specs-driven development. Drop this into any project to get consistent, high-quality AI-assisted development from day one.
 
 ---
 
-**Made with 🤖 by the LIDR community**
+## Getting Started
 
-For questions, issues, or suggestions, visit [LIDR.co](https://lidr.co/ia-devs)
+### Step 1 — Copy the framework into your project
 
+```bash
+cp -r ai-specs/     your-project/ai-specs/
+cp    CLAUDE.md     your-project/CLAUDE.md
+cp -r .agent/       your-project/.agent/
+cp -r .claude/      your-project/.claude/      # Claude Code slash commands
+```
+
+> If you use Cursor, also copy `.cursor/`.
+
+---
+
+### Step 2 — Run the Setup Prompt
+
+Open your AI assistant (Claude Code, Antigravity, or Cursor) **inside the target repository** and paste the following prompt exactly as-is. This triggers a full automated adaptation of the framework to your project.
+
+```
+You are an expert software architect and AI workflow specialist.
+Your task is to fully adapt the ai-specs framework that was just copied into this
+repository so that every agent, command, and standard reflects this project's
+actual stack and conventions — with zero manual editing required from the developer.
+
+Work in this exact sequence. Do NOT skip any step.
+
+────────────────────────────────────────────────────────
+PHASE 1 · DISCOVERY (read only, no changes yet)
+────────────────────────────────────────────────────────
+
+1. Read the entire repository structure. Identify:
+   - Runtime and language versions (Node.js, Python, Go, etc.)
+   - Frameworks in use (NestJS, Express, Next.js, React, FastAPI, etc.)
+   - Databases and ORMs (MongoDB/Mongoose, PostgreSQL/Prisma, etc.)
+   - Test tools (Jest, Vitest, Pytest, Cypress, Playwright, etc.)
+   - Monorepo layout (apps/, packages/, services/, libs/, etc.)
+   - Existing domain patterns (DDD entities, modules, bounded contexts)
+   - CI/CD configuration (GitHub Actions, GitLab CI, etc.)
+   - Package manager (npm, yarn, pnpm, bun)
+
+2. Read ALL files in ai-specs/specs/ and identify every placeholder,
+   outdated reference, or assumption that does not match this project.
+
+3. Read ALL files in ai-specs/.agents/ and identify capabilities that
+   do not match the actual stack.
+
+4. Read ALL files in ai-specs/.commands/ (and .agent/workflows/ if present)
+   and identify broken paths, incorrect tool references, or missing context.
+
+5. Read CLAUDE.md and .agent/rules/ — note any broken links or
+   references that need updating.
+
+Before making any changes, output a structured discovery report:
+   - Detected stack (confirmed facts only, no assumptions)
+   - List of files that need changes, grouped by category
+   - List of spec files that are missing and must be created from scratch
+   - Any ambiguities that require clarification (ask me now, before proceeding)
+
+────────────────────────────────────────────────────────
+PHASE 2 · ADAPT STANDARDS
+────────────────────────────────────────────────────────
+
+Update the following files to reflect this project's actual stack.
+Replace ALL generic placeholder content with specific, accurate information.
+
+6. ai-specs/specs/backend-standards.mdc
+   - Replace the Technology Stack section with the actual runtime, frameworks,
+     databases, ORMs, and testing tools used in this repository
+   - Replace code examples with patterns that match the real codebase
+   - Keep architecture principles (DDD, hexagonal) but adjust layer names
+     to match the project's module structure
+
+7. ai-specs/specs/frontend-standards.mdc (if a frontend exists)
+   - Replace framework references with the actual UI stack
+   - Update component patterns, state management, and testing tools
+   - If no frontend exists in this repo, note this clearly in the file
+
+8. If ai-specs/specs/data-model.md does not exist, create it by:
+   - Reading all schema files (Mongoose schemas, Prisma models, SQL migrations,
+     TypeORM entities, etc.)
+   - Documenting every domain entity: fields, types, relationships, constraints
+   - Mapping bounded contexts if identifiable
+
+9. If ai-specs/specs/api-spec.yml does not exist, create it by:
+   - Reading all route/controller definitions
+   - Generating an OpenAPI 3.0 spec covering every existing endpoint
+   - Including request/response schemas, status codes, and auth requirements
+
+10. If ai-specs/specs/development_guide.md does not exist, create it by:
+    - Reading README, package.json scripts, Makefile, docker-compose.yml, etc.
+    - Documenting: local setup, environment variables, how to run tests,
+      how to run the dev server, how to build for production
+
+────────────────────────────────────────────────────────
+PHASE 3 · ADAPT AGENTS
+────────────────────────────────────────────────────────
+
+11. Update ai-specs/.agents/backend-developer.md:
+    - Replace every framework/library reference with the actual stack
+    - Update code examples to use the project's real patterns
+    - Ensure NestJS injection, Mongoose schemas, and repository patterns
+      match what exists in the codebase (or remove if not applicable)
+
+12. Update ai-specs/.agents/frontend-developer.md (if frontend exists):
+    - Same as above for the frontend stack
+
+13. Update ai-specs/.agents/testing-specialist.md:
+    - Replace test tool references with the actual tools used
+    - Update example test patterns to match the project's test structure
+
+14. For software-architect.md and mkdocs-specialist.md:
+    - Update any framework-specific references
+    - These agents are largely framework-agnostic — only update if needed
+
+────────────────────────────────────────────────────────
+PHASE 4 · ADAPT COMMANDS & WORKFLOWS
+────────────────────────────────────────────────────────
+
+15. Verify all ai-specs/.commands/ files:
+    - Confirm all file paths referenced exist in this repository
+    - Update any hardcoded paths or ticket ID prefixes
+    - Ensure Linear MCP calls use the correct team identifier for this project
+
+16. If .agent/workflows/ exists, apply the same verification to all files there.
+
+17. Update CLAUDE.md:
+    - Fix any broken links to standards files
+    - Add any project-specific instructions that should always apply
+
+────────────────────────────────────────────────────────
+PHASE 5 · VALIDATION REPORT
+────────────────────────────────────────────────────────
+
+18. Output a final validation report with three sections:
+    ✅ ADAPTED — files updated, describe what changed
+    📄 CREATED — new spec files generated, describe their content
+    ⚠️  MANUAL ACTION REQUIRED — things that cannot be inferred automatically
+       (e.g., Linear team/project IDs, environment variables, external service URLs)
+
+The framework is ready when all commands can run without modification
+and all agents have accurate knowledge of this project's codebase.
+```
+
+> **How to run it:**
+> - **Claude Code**: paste directly into the chat (no slash command needed)
+> - **Antigravity**: paste directly into the chat
+> - **Cursor**: paste into Composer (Cmd+I)
+
+The AI will ask clarifying questions before making changes. Answer them, then let it complete all 5 phases. At the end, review the ⚠️ Manual Action Required section and handle those items.
+
+---
+
+### Step 3 — You're ready
+
+Once the setup prompt completes, the full workflow is available. Jump to [Using the Workflow](#using-the-workflow) below.
+
+---
+
+## Using the Workflow
+
+<a name="using-the-workflow"></a>
+
+Each command automatically moves the Linear ticket to the corresponding status:
+
+```
+Linear ticket
+     │
+     ▼
+[Backlog / Todo]
+     │
+     ▼  /enrich-ticket PROJ-42          (optional — if ticket lacks technical detail)
+     │
+[In Refinement]
+     │
+     ▼  /plan-backend-ticket PROJ-42    (or /plan-frontend-ticket)
+     │
+[In Progress]  ←─ plan saved to ai-specs/changes/PROJ-42_backend.md
+     │
+     ▼  /develop-backend ai-specs/changes/PROJ-42_backend.md
+     │
+[In Review]  ←─ PR opened and linked to the ticket
+     │
+     ▼  merge PR
+     │
+[Done]
+```
+
+---
+
+### Step 1: Enrich the Ticket (optional)
+
+Run this if the ticket lacks technical detail — endpoint specs, validation rules, files to modify, test requirements, etc.
+
+```
+/enrich-ticket PROJ-42
+```
+
+What happens:
+- Fetches the ticket from Linear via MCP
+- Evaluates completeness against product best practices
+- Updates the ticket with an **[Enhanced]** section containing full technical detail
+- Moves the ticket to **In Refinement**
+
+Skip this step if the ticket already has clear acceptance criteria and technical specs.
+
+---
+
+### Step 2: Generate the Plan
+
+```
+/plan-backend-ticket PROJ-42
+```
+
+or
+
+```
+/plan-frontend-ticket PROJ-42
+```
+
+What happens:
+- Reads the ticket from Linear
+- Produces `ai-specs/changes/PROJ-42_backend.md` with a step-by-step implementation plan:
+  - Architecture context (layers and files involved)
+  - TDD test specifications (failing tests to write first)
+  - Documentation update requirements
+- Moves the ticket to **In Progress**
+
+**Review the plan before proceeding** — this is your checkpoint to validate the proposed architecture.
+
+---
+
+### Step 3: Implement
+
+```
+/develop-backend ai-specs/changes/PROJ-42_backend.md
+```
+
+or
+
+```
+/develop-frontend ai-specs/changes/PROJ-42_frontend.md
+```
+
+What happens:
+1. Creates branch `feature/PROJ-42-backend`
+2. For each step in the plan, follows TDD strictly:
+   - Writes failing test first (RED)
+   - Implements minimum code to pass (GREEN)
+   - Refactors (REFACTOR)
+3. Runs full test suite after each step
+4. Updates `api-spec.yml` and `data-model.md` as needed
+5. Opens a PR linked to the Linear ticket
+6. Moves the ticket to **In Review**
+
+---
+
+## Available Commands
+
+### Development Commands
+
+| Command | Description |
+|---|---|
+| `/enrich-ticket [id]` | Enrich a Linear ticket with technical detail |
+| `/plan-backend-ticket [id]` | Generate backend implementation plan |
+| `/plan-frontend-ticket [id]` | Generate frontend implementation plan |
+| `/develop-backend [plan.md]` | Implement backend from plan (TDD) |
+| `/develop-frontend [plan.md]` | Implement frontend from plan |
+| `/ship-it [context]` | Analyze, document, commit, push, and open PR autonomously |
+
+### Quality Commands
+
+| Command | Description |
+|---|---|
+| `/write-tests [file/module]` | Generate comprehensive test suite |
+| `/review-architecture [module]` | Architectural compliance report |
+
+### Documentation Commands
+
+| Command | Description |
+|---|---|
+| `/setup-mkdocs` | Scaffold MkDocs documentation site |
+| `/create-adr [description]` | Create Architecture Decision Record |
+| `/update-docs` | Update technical docs from recent changes |
+| `/meta-prompt [prompt]` | Improve a prompt using best practices |
+
+---
+
+## Available Agents
+
+| Agent | Specialty |
+|---|---|
+| `backend-developer` | NestJS, Node.js, DDD, hexagonal architecture, MongoDB/Mongoose |
+| `frontend-developer` | React/Next.js, TanStack Query, Atomic Design, Cypress |
+| `testing-specialist` | TDD, Jest, Cypress, test strategy, coverage |
+| `software-architect` | Clean/hexagonal architecture review, ADRs, domain modeling |
+| `mkdocs-specialist` | MkDocs Material, technical documentation, API docs |
+
+---
+
+## Core Development Principles
+
+All development follows:
+
+1. **TDD**: Write failing tests before implementation (red-green-refactor)
+2. **Hexagonal Architecture**: Domain has zero framework dependencies; adapters implement ports
+3. **DDD**: Rich domain entities with behavior, value objects, repository interfaces
+4. **English Only**: All code, comments, docs, commits, and tickets in English
+5. **Type Safety**: TypeScript strict mode — no `any`
+6. **90%+ Test Coverage**: Across all backend layers
+7. **Conventional Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`
+8. **Incremental Changes**: One step at a time, reviewable PRs
+
+---
+
+## Technology Stack (Base Template)
+
+Adapt per project using the Setup Prompt above. The defaults are:
+
+**Backend:**
+- Runtime: Node.js 18+ / TypeScript strict
+- Framework: NestJS (new services), plain Node.js (legacy)
+- Database: MongoDB + Mongoose (primary), PostgreSQL + Prisma (alternative)
+- Testing: Jest (unit/integration), Cypress (E2E)
+
+**Frontend:**
+- Framework: Next.js 14+ App Router (new), React SPA (legacy)
+- State: TanStack Query (server), useState/Zustand (client)
+- Forms: React Hook Form + Zod
+- Testing: Jest + React Testing Library, Cypress
+
+---
+
+## Repository Structure
+
+```
+.
+├── CLAUDE.md                         # Claude Code configuration (auto-loaded)
+├── ai-specs/
+│   ├── specs/                        # Development standards (single source of truth)
+│   │   ├── base-standards.mdc        # Core principles and language rules
+│   │   ├── backend-standards.mdc     # NestJS/Node.js, DDD, hexagonal, MongoDB
+│   │   ├── frontend-standards.mdc    # React/Next.js, TanStack Query, Cypress
+│   │   └── documentation-standards.mdc
+│   ├── .agents/                      # AI agent definitions
+│   │   ├── backend-developer.md      # DDD/hexagonal backend architect
+│   │   ├── frontend-developer.md     # React/Next.js component architect
+│   │   ├── testing-specialist.md     # TDD, Jest, Cypress expert
+│   │   ├── software-architect.md     # Clean/hexagonal architecture reviewer
+│   │   └── mkdocs-specialist.md      # Technical documentation with MkDocs
+│   ├── .commands/                    # Claude Code slash commands
+│   │   ├── enrich-us.md              # Enrich a Linear ticket
+│   │   ├── plan-backend-ticket.md    # Generate backend implementation plan
+│   │   ├── plan-frontend-ticket.md   # Generate frontend implementation plan
+│   │   ├── develop-backend.md        # Implement from backend plan
+│   │   ├── develop-frontend.md       # Implement from frontend plan
+│   │   ├── write-tests.md            # Generate test suite (TDD)
+│   │   ├── review-architecture.md    # Architectural compliance review
+│   │   ├── setup-mkdocs.md           # Scaffold MkDocs documentation site
+│   │   ├── create-adr.md             # Create Architecture Decision Record
+│   │   ├── update-docs.md            # Update technical documentation
+│   │   ├── meta-prompt.md            # Improve a prompt using best practices
+│   │   └── ship-it.md                # Analyze, commit, push, and open PR
+│   └── changes/                      # Generated implementation plans
+│       └── SCRUM-10_backend.md       # Example: Position update feature plan
+├── .agent/                           # Antigravity configuration
+│   ├── rules/
+│   │   └── development-standards.md  # Rules auto-applied in every session
+│   └── workflows/                    # Slash-command workflows for Antigravity
+│       ├── enrich-ticket.md
+│       ├── plan-backend-ticket.md
+│       ├── plan-frontend-ticket.md
+│       ├── develop-backend.md
+│       ├── develop-frontend.md
+│       ├── write-tests.md
+│       ├── review-architecture.md
+│       ├── setup-mkdocs.md
+│       ├── create-adr.md
+│       ├── update-docs.md
+│       ├── meta-prompt.md
+│       └── ship-it.md
+└── .cursor/rules/                    # Cursor configuration
+    └── use-base-rules.mdc
+```
+
+## Multi-Copilot Support
+
+| AI Tool | Configuration File | Auto-loads |
+|---|---|---|
+| Claude Code | `CLAUDE.md` | Yes |
+| Antigravity | `.agent/rules/development-standards.md` | Yes |
+| Cursor | `.cursor/rules/use-base-rules.mdc` | Yes |
+
+All tools reference the same core rules in `ai-specs/specs/`, ensuring consistency.
+
+---
+
+## Reference Examples
+
+The following files are included as examples from a reference ATS project:
+- `ai-specs/specs/api-spec.yml` — OpenAPI 3.0 example
+- `ai-specs/specs/data-model.md` — Domain model documentation example
+- `ai-specs/changes/SCRUM-10_backend.md` — Complete backend implementation plan example
+- `ai-specs/changes/SCRUM-10-Position-Update.md` — Enriched user story example
+
+---
+
+## License
+
+Copyright (c) 2025 LIDR.co — MIT License
+
+Part of the AI4Devs program by LIDR.co: https://lidr.co/ia-devs
