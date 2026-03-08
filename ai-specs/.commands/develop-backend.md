@@ -1,13 +1,26 @@
-Please analyze and fix the Jira ticket: $ARGUMENTS.
+Implement the backend feature described in the plan file: $ARGUMENTS
 
-Follow these steps:
+Follow these steps strictly in order:
 
-1. Understand the problem described in the ticket
-2. Search the codebase for relevant files
-3. Start a new branch using the ID of the ticket (for example SCRUM-1)
-4. Implement the necessary changes to solve the ticket, following the order of the different tasks and making sure you accomplish all of them in order, like writing and running tests to verify the solution, updating documentation, etc.
-5. Ensure code passes linting and type checking
-6. Stage only the files affected by the ticket, and leave any other file changed out of the commit. Create a descriptive commit message
-7. Push and create a PR, using the ID of the ticket (for example SCRUM-1) so it gets linked in Jira ticket
+1. Read the implementation plan file provided in $ARGUMENTS thoroughly before starting
+2. If no plan file is provided, first run `/plan-backend-ticket` to generate one
+3. Move to the feature branch specified in Step 0 of the plan (create it if it doesn't exist)
+4. Implement each step of the plan in order, following TDD:
+   - Write failing unit tests FIRST for the step
+   - Implement the code to make tests pass
+   - Refactor if needed
+5. After each step, run the test suite to verify it passes before proceeding
+6. Ensure code passes linting and TypeScript type checking with no errors
+7. Follow all standards in `ai-specs/specs/backend-standards.mdc`
+8. Update technical documentation as specified in the last step of the plan
+9. Stage only the files affected by this ticket, leaving unrelated changes unstaged
+10. Create a descriptive commit message following conventional commits format
+11. Push and create a PR using the ticket ID from the plan, so it gets linked in Linear
+12. Move the ticket status to **In Review** in Linear using the MCP
 
 Remember to use the GitHub CLI (`gh`) for all GitHub-related tasks.
+
+TDD Cycle for each step:
+- RED: Write a failing test that describes the expected behavior
+- GREEN: Write the minimum code to make the test pass
+- REFACTOR: Clean up the code while keeping tests green

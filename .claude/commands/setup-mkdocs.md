@@ -1,0 +1,1 @@
+../../ai-specs/.commands/setup-mkdocs.md
