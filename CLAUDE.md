@@ -40,6 +40,25 @@ ai-specs/
 
 Commands follow a Linear ticket lifecycle: `enrich-us` (enriches ticket) → `plan-*-ticket` (generates plan in `changes/`) → `develop-*` (implements via TDD, opens PR) → `ship-it` (commit + push + PR)
 
+Most commands depend on **Linear MCP** to fetch/update tickets. Plans are saved as `changes/TICKET-ID_backend.md` or `changes/TICKET-ID_frontend.md`.
+
+### Available Slash Commands
+
+| Command | Purpose |
+|---|---|
+| `/enrich-us [id]` | Enrich a Linear ticket with technical detail |
+| `/plan-backend-ticket [id]` | Generate backend implementation plan |
+| `/plan-frontend-ticket [id]` | Generate frontend implementation plan |
+| `/develop-backend [plan.md]` | Implement backend from plan (TDD) |
+| `/develop-frontend [plan.md]` | Implement frontend from plan |
+| `/ship-it [context]` | Analyze, document, commit, push, and open PR |
+| `/write-tests [file/module]` | Generate comprehensive test suite |
+| `/review-architecture [module]` | Architectural compliance report |
+| `/setup-mkdocs` | Scaffold MkDocs documentation site |
+| `/create-adr [description]` | Create Architecture Decision Record |
+| `/update-docs` | Update technical docs from recent changes |
+| `/meta-prompt [prompt]` | Improve a prompt using best practices |
+
 ## Multi-Tool Configuration
 
 | AI Tool | Config Entry Point | How it loads rules |
@@ -67,6 +86,16 @@ For detailed guidelines, refer to:
 - [Backend Standards](./ai-specs/specs/backend-standards.mdc) — Hexagonal architecture, DDD, API design, database patterns, testing, security
 - [Frontend Standards](./ai-specs/specs/frontend-standards.mdc) — React/Next.js, component patterns, state management, testing
 - [Documentation Standards](./ai-specs/specs/documentation-standards.mdc) — Documentation structure, update processes, formatting
+
+## Known Gap: Missing Agent Symlinks
+
+`.claude/agents/` currently only symlinks `backend-developer` and `frontend-developer`. Three agents exist in `ai-specs/.agents/` but lack symlinks: `software-architect`, `testing-specialist`, `mkdocs-specialist`. To add them:
+
+```bash
+ln -s ../../ai-specs/.agents/software-architect.md .claude/agents/software-architect.md
+ln -s ../../ai-specs/.agents/testing-specialist.md .claude/agents/testing-specialist.md
+ln -s ../../ai-specs/.agents/mkdocs-specialist.md .claude/agents/mkdocs-specialist.md
+```
 
 ## Important: Editing Symlinked Files
 
