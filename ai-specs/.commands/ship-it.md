@@ -58,6 +58,8 @@ Group all changes into atomic commits by concern. Stage and commit each group se
 - Config files (root `*.config.*`, `.eslintrc`, `turbo.json`, etc.) → config commit
 - Test files → commit with their related feature, or separate test commit
 
+**All commit messages, branch names, and PR content MUST be in English** (per base-standards.mdc).
+
 **Commit message format:** `<gitmoji> <type>(<scope>): description`
 
 Gitmoji reference:
