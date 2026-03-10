@@ -13,12 +13,8 @@ Follow these steps strictly in order:
 6. Ensure code passes linting and TypeScript type checking with no errors
 7. Follow all standards in `ai-specs/specs/backend-standards.mdc`
 8. Update technical documentation as specified in the last step of the plan
-9. Stage only the files affected by this ticket, leaving unrelated changes unstaged
-10. Create a descriptive commit message following conventional commits format
-11. Push and create a PR using the ticket ID from the plan, so it gets linked in Linear
-12. Move the ticket status to **In Review** in Linear using the MCP
-
-Remember to use the GitHub CLI (`gh`) for all GitHub-related tasks.
+9. Run `/ship-it` to stage, commit, push, and create the PR
+10. Move the ticket status to **In Review** in Linear using the MCP
 
 TDD Cycle for each step:
 - RED: Write a failing test that describes the expected behavior

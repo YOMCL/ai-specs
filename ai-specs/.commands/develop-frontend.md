@@ -31,10 +31,8 @@ Implement the UI feature described in the plan or ticket.
 7. Ensure code passes linting and TypeScript type checking with no errors
 8. Follow all standards in `ai-specs/specs/frontend-standards.mdc`
 9. Update technical documentation as specified in the plan
-10. Stage only the files affected by this ticket
-11. Create a descriptive commit message following conventional commits format
-12. Push and create a PR using the ticket ID, so it gets linked in Linear
-13. Move the ticket status to **In Review** in Linear using the MCP
+10. Run `/ship-it` to stage, commit, push, and create the PR
+11. Move the ticket status to **In Review** in Linear using the MCP
 
 ## Architecture & best practices
 
