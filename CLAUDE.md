@@ -68,12 +68,15 @@ Most commands depend on **Linear MCP** to fetch/update tickets. Plans are saved 
 | Cursor | `.cursor/rules/use-base-rules.mdc` | Points to `base-standards.mdc` as single source of truth |
 | Codex / Gemini | `codex.md` / `GEMINI.md` | Symlinks to `base-standards.mdc` |
 
+## No Build/Test Pipeline
+
+This is a framework of markdown/mdc specs, not an application. There are no build, lint, or test commands. Validation is done by reviewing the markdown content and verifying symlinks resolve correctly.
+
 ## Core Principles
 
-- **Small tasks, one at a time**: Work in baby steps. Never go forward more than one step.
+- **Small tasks, one at a time**: Work in baby steps. Prefer focused, incremental changes.
 - **Test-Driven Development**: Start with failing tests for any new functionality (red-green-refactor).
 - **Type Safety**: All code must be fully typed. No `any` in TypeScript.
-- **Incremental Changes**: Prefer focused changes over large modifications.
 - **Question Assumptions**: Always question assumptions and inferences.
 - **Pattern Detection**: Detect and highlight repeated code patterns.
 - **English Only**: All technical artifacts (code, comments, docs, commits, tickets, configs) must be in English.
@@ -86,16 +89,6 @@ For detailed guidelines, refer to:
 - [Backend Standards](./ai-specs/specs/backend-standards.mdc) — Hexagonal architecture, DDD, API design, database patterns, testing, security
 - [Frontend Standards](./ai-specs/specs/frontend-standards.mdc) — React/Next.js, component patterns, state management, testing
 - [Documentation Standards](./ai-specs/specs/documentation-standards.mdc) — Documentation structure, update processes, formatting
-
-## Known Gap: Missing Agent Symlinks
-
-`.claude/agents/` currently only symlinks `backend-developer` and `frontend-developer`. Three agents exist in `ai-specs/.agents/` but lack symlinks: `software-architect`, `testing-specialist`, `mkdocs-specialist`. To add them:
-
-```bash
-ln -s ../../ai-specs/.agents/software-architect.md .claude/agents/software-architect.md
-ln -s ../../ai-specs/.agents/testing-specialist.md .claude/agents/testing-specialist.md
-ln -s ../../ai-specs/.agents/mkdocs-specialist.md .claude/agents/mkdocs-specialist.md
-```
 
 ## Important: Editing Symlinked Files
 
