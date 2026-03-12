@@ -157,9 +157,29 @@ The AI will ask clarifying questions before making changes. Answer them, then le
 
 ---
 
-### Step 3 — You're ready
+### Step 3 — Diagnose Technical Debt
 
-Once the setup prompt completes, the full workflow is available. Jump to [Using the Workflow](#using-the-workflow) below.
+Once the framework is adapted, run the diagnostic command to get a complete health assessment of the codebase and an actionable backlog of tech debt tickets in Linear:
+
+```
+/diagnose-repo my-project --project MyProject
+```
+
+What happens:
+- Scans dependencies, code quality, test coverage, architecture compliance, API gaps, CI/CD health, and security
+- Generates a structured **Health Score** report (0–100)
+- Creates **Linear tickets** for every finding, grouped by root cause, with severity-based priority
+- Links all tickets under a parent epic: `[DIAGNOSTIC] Tech Debt — my-project`
+
+This gives you a clear, prioritized action plan from day one — no manual audit needed.
+
+> Add `--assignee <name>` to auto-assign all generated tickets.
+
+---
+
+### Step 4 — You're ready
+
+Once the setup prompt and diagnosis are complete, the full workflow is available. Jump to [Using the Workflow](#using-the-workflow) below.
 
 ---
 
@@ -278,6 +298,7 @@ What happens:
 
 | Command | Description |
 |---|---|
+| `/diagnose-repo [repo]` | Full tech debt diagnosis + Linear ticket generation |
 | `/write-tests [file/module]` | Generate comprehensive test suite |
 | `/review-architecture [module]` | Architectural compliance report |
 
@@ -355,6 +376,7 @@ Adapt per project using the Setup Prompt above. The defaults are:
 │   │   ├── software-architect.md     # Clean/hexagonal architecture reviewer
 │   │   └── mkdocs-specialist.md      # Technical documentation with MkDocs
 │   ├── .commands/                    # Claude Code slash commands
+│   │   ├── diagnose-repo.md           # Tech debt diagnosis + Linear tickets
 │   │   ├── enrich-us.md              # Enrich a Linear ticket
 │   │   ├── plan-backend-ticket.md    # Generate backend implementation plan
 │   │   ├── plan-frontend-ticket.md   # Generate frontend implementation plan
@@ -373,6 +395,7 @@ Adapt per project using the Setup Prompt above. The defaults are:
 │   ├── rules/
 │   │   └── development-standards.md  # Rules auto-applied in every session
 │   └── workflows/                    # Slash-command workflows for Antigravity
+│       ├── diagnose-repo.md
 │       ├── enrich-ticket.md
 │       ├── plan-backend-ticket.md
 │       ├── plan-frontend-ticket.md

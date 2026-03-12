@@ -57,6 +57,7 @@ Most commands depend on **Linear MCP** to fetch/update tickets. Plans are saved 
 | `/setup-mkdocs` | Scaffold MkDocs documentation site |
 | `/create-adr [description]` | Create Architecture Decision Record |
 | `/update-docs` | Update technical docs from recent changes |
+| `/diagnose-repo [repo]` | Comprehensive tech debt diagnosis + Linear tickets |
 | `/meta-prompt [prompt]` | Improve a prompt using best practices |
 
 ## Multi-Tool Configuration
