@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
-# update-ai-specs.sh — Update ai-specs framework from upstream source
+# update-ai-specs.sh — Push ai-specs framework updates to a target project
+#
+# This script runs FROM the ai-specs repo and targets an external project.
+# The ai-specs repo (where this script lives) is always the upstream source.
 #
 # Usage:
-#   ./update-ai-specs.sh <upstream-path>
-#   ./update-ai-specs.sh https://github.com/YOMCL/ai-specs.git
-#   ./update-ai-specs.sh https://github.com/YOMCL/ai-specs.git main
+#   ./update-ai-specs.sh <project-path>
+#
+# Examples:
+#   ./update-ai-specs.sh ../yom-api
+#   ./update-ai-specs.sh /home/user/projects/my-app
 #
 # What it does:
 #   1. Reads .manifest.json to classify files
-#   2. Copies "safe_to_overwrite" files directly from upstream
-#   3. Generates diffs for "adapted" files in .update-review/
-#   4. Recreates missing symlinks
+#   2. Copies "safe_to_overwrite" files directly into the project
+#   3. Generates diffs for "adapted" files in <project>/.update-review/
+#   4. Recreates missing symlinks in the project
 #   5. Prints a summary
 #
-# After running, use /update-ai-specs to AI-merge the adapted file diffs.
+# After running, open the target project and use /update-ai-specs to
+# AI-merge the adapted file diffs.
 
 set -euo pipefail
 
@@ -23,10 +29,10 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-MANIFEST="ai-specs/.manifest.json"
-REVIEW_DIR=".update-review"
-UPSTREAM_SOURCE="$1"
-UPSTREAM_BRANCH="${2:-production}"
+# Upstream = the directory where this script lives (ai-specs repo)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+UPSTREAM_DIR="$SCRIPT_DIR"
+MANIFEST="$UPSTREAM_DIR/ai-specs/.manifest.json"
 
 # --- Helpers ---
 
@@ -36,10 +42,12 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 log_err()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 usage() {
-  echo "Usage: $0 <upstream-path-or-git-url> [branch]"
+  echo "Usage: $0 <project-path>"
   echo ""
-  echo "  upstream-path-or-git-url  Local path or git URL to the ai-specs upstream repo"
-  echo "  branch                    Git branch to use (default: production)"
+  echo "  project-path  Path to the target project that has adopted ai-specs"
+  echo ""
+  echo "This script runs from the ai-specs repo (upstream) and pushes updates"
+  echo "into the target project, respecting adapted vs safe-to-overwrite files."
   exit 1
 }
 
@@ -72,42 +80,25 @@ if [[ $# -lt 1 ]]; then
   usage
 fi
 
+PROJECT_DIR="$(cd "$1" && pwd)"
+REVIEW_DIR="$PROJECT_DIR/.update-review"
+
 require_cmd python3
-require_cmd git
 require_cmd diff
 
 if [[ ! -f "$MANIFEST" ]]; then
-  log_err "Manifest not found at $MANIFEST. Are you in the project root?"
+  log_err "Manifest not found at $MANIFEST. Is this the ai-specs repo?"
   exit 1
 fi
 
-# --- Resolve upstream to a local path ---
-
-UPSTREAM_DIR=""
-CLEANUP_UPSTREAM=false
-
-if [[ -d "$UPSTREAM_SOURCE" ]]; then
-  # Local path
-  UPSTREAM_DIR="$(cd "$UPSTREAM_SOURCE" && pwd)"
-  log_info "Using local upstream: $UPSTREAM_DIR"
-elif [[ "$UPSTREAM_SOURCE" == http* || "$UPSTREAM_SOURCE" == git@* ]]; then
-  # Git URL — clone to temp dir
-  UPSTREAM_DIR="$(mktemp -d)"
-  CLEANUP_UPSTREAM=true
-  log_info "Cloning upstream from $UPSTREAM_SOURCE (branch: $UPSTREAM_BRANCH)..."
-  git clone --depth 1 --branch "$UPSTREAM_BRANCH" "$UPSTREAM_SOURCE" "$UPSTREAM_DIR" 2>/dev/null
-  log_ok "Cloned to temp directory"
-else
-  log_err "Upstream source '$UPSTREAM_SOURCE' is neither a valid directory nor a git URL."
+if [[ ! -d "$PROJECT_DIR/ai-specs" ]]; then
+  log_err "No ai-specs/ directory found in $PROJECT_DIR. Has this project adopted ai-specs?"
   exit 1
 fi
 
-cleanup() {
-  if [[ "$CLEANUP_UPSTREAM" == true && -d "$UPSTREAM_DIR" ]]; then
-    rm -rf "$UPSTREAM_DIR"
-  fi
-}
-trap cleanup EXIT
+log_info "Upstream (ai-specs):  $UPSTREAM_DIR"
+log_info "Target project:       $PROJECT_DIR"
+echo ""
 
 # --- Prepare review directory ---
 
@@ -128,6 +119,7 @@ log_info "Phase 1: Updating safe_to_overwrite files..."
 
 while IFS= read -r file; do
   upstream_file="$UPSTREAM_DIR/$file"
+  project_file="$PROJECT_DIR/$file"
 
   if [[ ! -f "$upstream_file" ]]; then
     log_warn "Not in upstream: $file (skipping)"
@@ -135,18 +127,18 @@ while IFS= read -r file; do
     continue
   fi
 
-  if [[ ! -f "$file" ]]; then
+  if [[ ! -f "$project_file" ]]; then
     # New file from upstream — copy it
-    mkdir -p "$(dirname "$file")"
-    cp "$upstream_file" "$file"
+    mkdir -p "$(dirname "$project_file")"
+    cp "$upstream_file" "$project_file"
     log_ok "NEW  $file"
     UPDATED=$((UPDATED + 1))
     continue
   fi
 
   # Compare and overwrite if different
-  if ! diff -q "$file" "$upstream_file" &>/dev/null; then
-    cp "$upstream_file" "$file"
+  if ! diff -q "$project_file" "$upstream_file" &>/dev/null; then
+    cp "$upstream_file" "$project_file"
     log_ok "UPDATED  $file"
     UPDATED=$((UPDATED + 1))
   else
@@ -160,6 +152,7 @@ log_info "Phase 2: Generating diffs for adapted files..."
 
 while IFS= read -r file; do
   upstream_file="$UPSTREAM_DIR/$file"
+  project_file="$PROJECT_DIR/$file"
 
   if [[ ! -f "$upstream_file" ]]; then
     log_warn "Not in upstream: $file (skipping)"
@@ -167,22 +160,22 @@ while IFS= read -r file; do
     continue
   fi
 
-  if [[ ! -f "$file" ]]; then
-    # File doesn't exist locally — copy upstream version as starting point
-    mkdir -p "$(dirname "$file")"
-    cp "$upstream_file" "$file"
+  if [[ ! -f "$project_file" ]]; then
+    # File doesn't exist in project — copy upstream version as starting point
+    mkdir -p "$(dirname "$project_file")"
+    cp "$upstream_file" "$project_file"
     log_ok "NEW (adapted, needs customization)  $file"
     UPDATED=$((UPDATED + 1))
     continue
   fi
 
   # Generate diff if files differ
-  if ! diff -q "$file" "$upstream_file" &>/dev/null; then
+  if ! diff -q "$project_file" "$upstream_file" &>/dev/null; then
     diff_file="$REVIEW_DIR/$(echo "$file" | tr '/' '_').diff"
 
-    # Generate unified diff: local (current) vs upstream (proposed)
-    diff -u "$file" "$upstream_file" \
-      --label "local: $file" \
+    # Generate unified diff: project (current) vs upstream (proposed)
+    diff -u "$project_file" "$upstream_file" \
+      --label "project: $file" \
       --label "upstream: $file" \
       > "$diff_file" || true  # diff returns 1 when files differ
 
@@ -190,7 +183,7 @@ while IFS= read -r file; do
     upstream_copy="$REVIEW_DIR/$(echo "$file" | tr '/' '_').upstream"
     cp "$upstream_file" "$upstream_copy"
 
-    log_warn "DIFF  $file -> $diff_file"
+    log_warn "DIFF  $file -> .update-review/$(echo "$file" | tr '/' '_').diff"
     DIFFS_GENERATED=$((DIFFS_GENERATED + 1))
   else
     SKIPPED=$((SKIPPED + 1))
@@ -202,19 +195,21 @@ done < <(read_manifest_array "categories.adapted.files")
 log_info "Phase 3: Checking symlinks..."
 
 while IFS= read -r symlink; do
-  if [[ ! -e "$symlink" ]]; then
+  project_link="$PROJECT_DIR/$symlink"
+
+  if [[ ! -e "$project_link" ]]; then
     # Determine the symlink target from upstream
     upstream_link="$UPSTREAM_DIR/$symlink"
     if [[ -L "$upstream_link" ]]; then
       target="$(readlink "$upstream_link")"
-      mkdir -p "$(dirname "$symlink")"
-      ln -s "$target" "$symlink"
+      mkdir -p "$(dirname "$project_link")"
+      ln -s "$target" "$project_link"
       log_ok "SYMLINK  $symlink -> $target"
       SYMLINKS_FIXED=$((SYMLINKS_FIXED + 1))
     elif [[ -f "$upstream_link" ]]; then
       # Upstream has a real file, not a symlink — copy it
-      mkdir -p "$(dirname "$symlink")"
-      cp "$upstream_link" "$symlink"
+      mkdir -p "$(dirname "$project_link")"
+      cp "$upstream_link" "$project_link"
       log_ok "COPIED (expected symlink)  $symlink"
       SYMLINKS_FIXED=$((SYMLINKS_FIXED + 1))
     else
@@ -232,12 +227,14 @@ while IFS= read -r upstream_file; do
   # Strip upstream dir prefix to get relative path
   rel_path="${upstream_file#$UPSTREAM_DIR/}"
 
-  # Skip .git, .DS_Store, changes/
+  # Skip upstream-only files (not distributed to projects)
   [[ "$rel_path" == .git/* ]] && continue
   [[ "$rel_path" == *.DS_Store ]] && continue
   [[ "$rel_path" == ai-specs/changes/* ]] && continue
-  [[ "$rel_path" == .manifest.json ]] && continue
-  [[ "$rel_path" == ai-specs/.manifest.json ]] && continue
+  [[ "$rel_path" == update-ai-specs.sh ]] && continue
+  [[ "$rel_path" == .gitignore ]] && continue
+  [[ "$rel_path" == .claude/settings.local.json ]] && continue
+  [[ "$rel_path" == .claude/memory* ]] && continue
 
   # Check if this file is in any manifest category
   in_manifest=false
@@ -259,29 +256,35 @@ if [[ ${#NEW_FILES[@]} -gt 0 ]]; then
     echo "  + $f"
   done
   echo ""
-  log_warn "Add these to .manifest.json under the appropriate category."
+  log_warn "Add these to ai-specs/.manifest.json in the upstream repo."
 fi
 
 # --- Summary ---
 
 echo ""
-echo -e "${CYAN}════════════════════════════════════════${NC}"
+echo -e "${CYAN}════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  ai-specs Update Summary${NC}"
-echo -e "${CYAN}════════════════════════════════════════${NC}"
+echo -e "${CYAN}  Target: ${PROJECT_DIR}${NC}"
+echo -e "${CYAN}════════════════════════════════════════════════${NC}"
 echo -e "  Files updated (overwritten):  ${GREEN}$UPDATED${NC}"
 echo -e "  Files unchanged (skipped):    $SKIPPED"
 echo -e "  Diffs to review:              ${YELLOW}$DIFFS_GENERATED${NC}"
 echo -e "  Symlinks fixed:               $SYMLINKS_FIXED"
 echo -e "  Missing from upstream:        $MISSING_UPSTREAM"
 echo -e "  New upstream files:           ${#NEW_FILES[@]}"
-echo -e "${CYAN}════════════════════════════════════════${NC}"
+echo -e "${CYAN}════════════════════════════════════════════════${NC}"
 
 if [[ $DIFFS_GENERATED -gt 0 ]]; then
   echo ""
   echo -e "${YELLOW}Adapted files have upstream changes. Review diffs in:${NC}"
   echo -e "  $REVIEW_DIR/"
   echo ""
-  echo -e "Run ${CYAN}/update-ai-specs${NC} to AI-merge the pending diffs."
+  echo -e "Open the target project and run ${CYAN}/update-ai-specs${NC} to AI-merge the pending diffs."
+fi
+
+# Clean up empty review dir
+if [[ -d "$REVIEW_DIR" ]] && [[ -z "$(ls -A "$REVIEW_DIR")" ]]; then
+  rmdir "$REVIEW_DIR"
 fi
 
 exit 0

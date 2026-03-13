@@ -40,8 +40,6 @@
         ".agent/workflows/update-ai-specs.md",
         ".agent/workflows/write-tests.md",
         ".cursor/rules/use-base-rules.mdc",
-        ".gitignore",
-        "update-ai-specs.sh",
         "README.md"
       ]
     },

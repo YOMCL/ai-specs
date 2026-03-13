@@ -200,18 +200,17 @@ The framework ships a `.manifest.json` that classifies every file into:
 
 ### Step 1 — Run the update script
 
-```bash
-# From a local clone of the upstream repo
-./update-ai-specs.sh /path/to/upstream/ai-specs
+From the **ai-specs repo** (upstream), target the project you want to update:
 
-# Or directly from a git URL
-./update-ai-specs.sh https://github.com/YOMCL/ai-specs.git
+```bash
+cd /path/to/ai-specs          # this repo
+./update-ai-specs.sh ../yom-api   # target project
 ```
 
 The script will:
-- Overwrite `safe_to_overwrite` files with the upstream versions
-- Generate unified diffs for `adapted` files in `.update-review/`
-- Fix any missing symlinks
+- Overwrite `safe_to_overwrite` files in the target project with upstream versions
+- Generate unified diffs for `adapted` files in `<project>/.update-review/`
+- Fix any missing symlinks in the target project
 - Report new upstream files not yet in the manifest
 
 ### Step 2 — AI-merge adapted files
