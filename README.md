@@ -183,6 +183,55 @@ Once the setup prompt and diagnosis are complete, the full workflow is available
 
 ---
 
+## Updating the Framework
+
+When the upstream ai-specs framework releases new commands, agents, or improved standards, use the update protocol to bring your project up to date without losing your customizations.
+
+### How it works
+
+The framework ships a `.manifest.json` that classifies every file into:
+
+| Category | Behavior on update |
+|---|---|
+| `safe_to_overwrite` | Replaced directly from upstream (commands, generic specs) |
+| `adapted` | Diff generated in `.update-review/` for AI-assisted merge |
+| `symlinks` | Recreated if missing |
+| `ignored` | Never touched (e.g., `changes/`) |
+
+### Step 1 — Run the update script
+
+```bash
+# From a local clone of the upstream repo
+./update-ai-specs.sh /path/to/upstream/ai-specs
+
+# Or directly from a git URL
+./update-ai-specs.sh https://github.com/YOMCL/ai-specs.git
+```
+
+The script will:
+- Overwrite `safe_to_overwrite` files with the upstream versions
+- Generate unified diffs for `adapted` files in `.update-review/`
+- Fix any missing symlinks
+- Report new upstream files not yet in the manifest
+
+### Step 2 — AI-merge adapted files
+
+```
+/update-ai-specs
+```
+
+This command reads the pending diffs and intelligently merges upstream improvements while preserving your project-specific customizations (stack references, paths, team config).
+
+### Step 3 — Review and commit
+
+Review the merged changes, then commit:
+
+```
+/ship-it Updated ai-specs framework to latest upstream
+```
+
+---
+
 ## Using the Workflow
 
 <a name="using-the-workflow"></a>
@@ -309,6 +358,7 @@ What happens:
 | `/setup-mkdocs` | Scaffold MkDocs documentation site |
 | `/create-adr [description]` | Create Architecture Decision Record |
 | `/update-docs` | Update technical docs from recent changes |
+| `/update-ai-specs` | AI-merge upstream changes into adapted files |
 | `/meta-prompt [prompt]` | Improve a prompt using best practices |
 
 ---
@@ -363,6 +413,7 @@ Adapt per project using the Setup Prompt above. The defaults are:
 ```
 .
 ├── CLAUDE.md                         # Claude Code configuration (auto-loaded)
+├── update-ai-specs.sh                # Framework update script
 ├── ai-specs/
 │   ├── specs/                        # Development standards (single source of truth)
 │   │   ├── base-standards.mdc        # Core principles and language rules
