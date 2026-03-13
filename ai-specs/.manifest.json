@@ -39,8 +39,7 @@
         ".agent/workflows/update-docs.md",
         ".agent/workflows/update-ai-specs.md",
         ".agent/workflows/write-tests.md",
-        ".cursor/rules/use-base-rules.mdc",
-        "README.md"
+        ".cursor/rules/use-base-rules.mdc"
       ]
     },
     "adapted": {
