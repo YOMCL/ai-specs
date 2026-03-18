@@ -96,6 +96,20 @@ For detailed guidelines, refer to:
 
 Always edit the **source files** in `ai-specs/`, never the symlink targets directly. The symlinks in `.claude/commands/`, `.claude/agents/`, and root-level `AGENTS.md`/`GEMINI.md`/`codex.md` all point back to `ai-specs/`. Editing the source ensures all AI tools stay in sync.
 
+## Reference Example Files
+
+The following files in this repository are **illustrative examples** from a reference ATS project. They are not core framework specs — treat them as templates, not authoritative content:
+
+- `ai-specs/specs/data-model.md` — Example domain model (LTI ATS: Candidate, Position, Application, Interview)
+- `ai-specs/specs/development_guide.md` — Example dev setup guide (PostgreSQL + Prisma + Node.js stack)
+- `ai-specs/specs/api-spec.yml` — Example OpenAPI 3.0 spec
+- `ai-specs/changes/SCRUM-10_backend.md` — Example backend implementation plan
+- `ai-specs/changes/SCRUM-10-Position-Update.md` — Example enriched user story
+
+When adapting this framework to a new project, these files should be replaced with project-specific versions.
+
+**Note on command name divergence:** The Claude Code command is `/enrich-us` (`.commands/enrich-us.md`), while the Antigravity workflow is named `enrich-ticket` (`.agent/workflows/enrich-ticket.md`). They serve the same purpose — enrich a Linear ticket.
+
 ## Extending the Framework
 
 **New command:**
