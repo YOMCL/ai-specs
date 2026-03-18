@@ -125,3 +125,25 @@ When done, print a summary:
 📝 Commits: <number of commits created>
 🔗 PR: <pr-url>
 ```
+
+## Phase 6: Notify Slack
+
+After PRs are created, send a message to the team Slack channel using the Slack MCP tool (`slack_send_message`).
+
+Get the repo name with: `basename $(git rev-parse --show-toplevel)`
+
+**Message format** (each section separated by a blank line, use `\n` for line breaks):
+
+```
+[<repo-name> → <branch1>, <branch2>, ...]
+<short description of what was shipped>
+
+- <branch1> → <url1>
+- <branch2> → <url2>
+
+cc: <mentions>
+```
+
+**Customize per project:**
+- **Channel:** Set the target channel for PR notifications (e.g. `#tech-prs`).
+- **cc mentions:** Use Slack user IDs with `<@ID>` format. No emojis. Include the relevant team members based on the type of project (frontend, backend, full-stack).
