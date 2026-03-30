@@ -58,6 +58,7 @@ Most commands depend on **Linear MCP** to fetch/update tickets. Plans are saved 
 | `/create-adr [description]` | Create Architecture Decision Record |
 | `/update-docs` | Update technical docs from recent changes |
 | `/diagnose-repo [repo]` | Comprehensive tech debt diagnosis + Linear tickets |
+| `/fix-review-comments [PR]` | Fix unresolved GitHub PR review comments |
 | `/update-ai-specs` | AI-assisted merge of upstream changes into adapted files |
 | `/meta-prompt [prompt]` | Improve a prompt using best practices |
 
