@@ -20,16 +20,41 @@ You are executing the `/fix-review-comments` workflow. Your job is to fetch all 
 
 ## Phase 2: Fetch Review Comments
 
-1. Fetch all review comments on the PR:
+1. Fetch all **unresolved** review threads using GraphQL (this gives you the thread IDs needed to resolve them later):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.position != null or .line != null) | {id, path, line: (.line // .original_line), side: (.side // "RIGHT"), body, user: .user.login, in_reply_to_id, diff_hunk}'
+   gh api graphql -f query='
+     query($owner: String!, $repo: String!, $number: Int!) {
+       repository(owner: $owner, name: $repo) {
+         pullRequest(number: $number) {
+           reviewThreads(first: 100) {
+             nodes {
+               id
+               isResolved
+               comments(first: 10) {
+                 nodes {
+                   id
+                   path
+                   line
+                   body
+                   author { login }
+                   diffHunk
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   ' -f owner='{owner}' -f repo='{repo}' -F number={number}
    ```
+   Filter to only threads where `isResolved` is `false`.
 2. Also fetch top-level PR review comments (review summaries):
    ```bash
    gh pr view {number} --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED") | {author: .author.login, state: .state, body: .body}'
    ```
 3. Group comments by file path. Ignore comments that are just approvals or simple acknowledgments (e.g., "LGTM", "looks good").
-4. Present a summary to the user:
+4. **Save the thread IDs** of each comment group so you can resolve them after fixing.
+5. Present a summary to the user:
    ```
    Found X review comments on PR #N:
    - file/path.ts (Y comments)
@@ -55,11 +80,39 @@ For each file with comments, in order:
 
 ## Phase 4: Verify
 
-1. Run the project's test suite to make sure nothing is broken.
-2. Run linting/type checking if available.
-3. If any test fails, fix the issue before continuing.
+**All checks below MUST pass before proceeding to commit. Do NOT skip any.**
 
-## Phase 5: Commit & Push
+1. Run linting and fix any errors:
+   ```bash
+   npm run lint
+   ```
+   If lint fails, fix all reported issues before continuing. Re-run until clean.
+2. Run type checking (if the project uses TypeScript):
+   ```bash
+   npm run typecheck  # or npx tsc --noEmit
+   ```
+   Fix any type errors before continuing.
+3. Run the project's test suite to make sure nothing is broken.
+4. If any check fails, fix the issue and re-run all checks from step 1.
+
+## Phase 5: Resolve Review Threads
+
+After fixing each comment, resolve its review thread using the GraphQL API. Use the thread `id` saved from Phase 2:
+
+```bash
+gh api graphql -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) {
+      thread { isResolved }
+    }
+  }
+' -f threadId='{thread_id}'
+```
+
+- Only resolve threads where you actually addressed the comment (code change, style fix, or clarification added).
+- Do NOT resolve threads you skipped (discussions, needs human input).
+
+## Phase 6: Commit & Push
 
 1. Stage all changed files.
 2. Create a single commit with the format:
@@ -80,7 +133,7 @@ For each file with comments, in order:
 
 **CRITICAL: NEVER include "Co-Authored-By: Claude" or "Generated with Claude Code" in commit messages.**
 
-## Phase 6: Report
+## Phase 7: Report
 
 Print a summary:
 
