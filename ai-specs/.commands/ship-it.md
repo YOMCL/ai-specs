@@ -46,6 +46,14 @@ If a `.agent/` directory exists in the project root, also update:
 - **`.agent/System/README.md`**: If new files were added to `System/`, add them to the index table.
 - **`.agent/README.md`**: If new files were added anywhere under `.agent/`, update the root index table.
 
+If `update-ai-specs.sh` exists in the repo root, this is the ai-specs framework repo. Distribute the changes to all relevant system repos before committing:
+
+```bash
+./update-ai-specs.sh <path/to/system-repo>
+```
+
+Then invoke `/update-ai-specs` in each target to perform the AI-assisted merge of adapted files.
+
 Skip this phase if changes are minor (bug fixes, small refactors, config tweaks).
 
 ## Phase 4: Commit
@@ -156,3 +164,4 @@ cc: <mentions>
 **Customize per project:**
 - **Channel:** `C077FJABDTN` (https://yomespacios.slack.com/archives/C077FJABDTN)
 - **cc mentions:** `<!subteam^S07EX7LQKPB>` (@devs user group)
+
