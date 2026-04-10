@@ -1,0 +1,1 @@
+../../ai-specs/.commands/update-agent-docs.md

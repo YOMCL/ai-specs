@@ -1,0 +1,1 @@
+../../ai-specs/.agents/feature-documenter.md

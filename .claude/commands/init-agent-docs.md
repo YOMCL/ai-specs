@@ -1,0 +1,1 @@
+../../ai-specs/.commands/init-agent-docs.md
