@@ -38,6 +38,14 @@ Analyze the diff against main. If there are significant changes (new endpoints, 
 - **ai-specs/specs/base-standards.mdc**: Update Implementation Status, Key API Endpoints, Database Schema sections as needed.
 - **README.md**: Update feature lists, environment variables, or setup instructions as needed.
 
+If a `.agent/` directory exists in the project root, also update:
+- **`.agent/Features/`**: If a new feature was added, create or update the corresponding feature doc using `.agent/Features/_template.md` as the base. Then update `.agent/Features/README.md` to include the new file in the index table.
+- **`.agent/System/architecture-overview.md`**: If the architecture changed (new module, new service, new integration).
+- **`.agent/System/database-schema.md`**: If new DB tables, collections, or schemas were added or modified.
+- **`.agent/System/deployment-guide.md`**: If deployment steps, environment variables, or infrastructure changed.
+- **`.agent/System/README.md`**: If new files were added to `System/`, add them to the index table.
+- **`.agent/README.md`**: If new files were added anywhere under `.agent/`, update the root index table.
+
 Skip this phase if changes are minor (bug fixes, small refactors, config tweaks).
 
 ## Phase 4: Commit
@@ -123,5 +131,28 @@ When done, print a summary:
 ✅ Ship complete!
 🌿 Branch: <branch-name>
 📝 Commits: <number of commits created>
-🔗 PR: <pr-url>
+🔗 PR (staging): <pr-url>
+🔗 PR (production): <pr-url>
 ```
+
+## Phase 6: Notify Slack
+
+After PRs are created, send a message to `#tecnología-prs` using the Slack MCP tool (`slack_send_message`).
+
+Get the repo name with: `basename $(git rev-parse --show-toplevel)`
+
+Each section separated by a blank line. The branch list is dynamic — include all target branches for this PR set. **IMPORTANT:** Use `\n` (literal newline) between lines in the Slack message string to ensure line breaks render correctly.
+
+```
+[<repo-name> → <branch1>, <branch2>, ...]
+<short description of what was shipped>
+
+- <branch1> → <url1>
+- <branch2> → <url2>
+
+cc: <mentions>
+```
+
+**Customize per project:**
+- **Channel:** `C077FJABDTN` (https://yomespacios.slack.com/archives/C077FJABDTN)
+- **cc mentions:** `<!subteam^S07EX7LQKPB>` (@devs user group)
