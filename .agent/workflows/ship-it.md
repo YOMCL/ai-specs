@@ -38,6 +38,16 @@ Analyze the diff against main. If there are significant changes (new endpoints, 
 - **ai-specs/specs/base-standards.mdc**: Update Implementation Status, Key API Endpoints, Database Schema sections as needed.
 - **README.md**: Update feature lists, environment variables, or setup instructions as needed.
 
+If a `.agent/` directory exists in the project root, run `/update-agent-docs` to keep the documentation in sync with the changes.
+
+If `update-ai-specs.sh` exists in the repo root, this is the ai-specs framework repo. Distribute the changes to all relevant system repos before committing:
+
+```bash
+./update-ai-specs.sh <path/to/system-repo>
+```
+
+Then invoke `/update-ai-specs` in each target to perform the AI-assisted merge of adapted files.
+
 Skip this phase if changes are minor (bug fixes, small refactors, config tweaks).
 
 ## Phase 4: Commit
@@ -57,6 +67,8 @@ Group all changes into atomic commits by concern. Stage and commit each group se
 - `*.md` files, docs → docs commit
 - Config files (root `*.config.*`, `.eslintrc`, `turbo.json`, etc.) → config commit
 - Test files → commit with their related feature, or separate test commit
+
+**All commit messages, branch names, and PR content MUST be in English** (per base-standards.mdc).
 
 **Commit message format:** `<gitmoji> <type>(<scope>): description`
 
@@ -121,5 +133,29 @@ When done, print a summary:
 ✅ Ship complete!
 🌿 Branch: <branch-name>
 📝 Commits: <number of commits created>
-🔗 PR: <pr-url>
+🔗 PR (staging): <pr-url>
+🔗 PR (production): <pr-url>
 ```
+
+## Phase 6: Notify Slack
+
+After PRs are created, send a message to `#tecnología-prs` using the Slack MCP tool (`slack_send_message`).
+
+Get the repo name with: `basename $(git rev-parse --show-toplevel)`
+
+Each section separated by a blank line. The branch list is dynamic — include all target branches for this PR set. **IMPORTANT:** Use `\n` (literal newline) between lines in the Slack message string to ensure line breaks render correctly.
+
+```
+[<repo-name> → <branch1>, <branch2>, ...]
+<short description of what was shipped>
+
+- <branch1> → <url1>
+- <branch2> → <url2>
+
+cc: <mentions>
+```
+
+**Customize per project:**
+- **Channel:** `C077FJABDTN` (https://yomespacios.slack.com/archives/C077FJABDTN)
+- **cc mentions:** `<!subteam^S07EX7LQKPB>` (@devs user group)
+
