@@ -59,6 +59,7 @@ Most commands depend on **Linear MCP** to fetch/update tickets. Plans are saved 
 | `/update-docs` | Update technical docs from recent changes |
 | `/diagnose-repo [repo]` | Comprehensive tech debt diagnosis + Linear tickets |
 | `/fix-review-comments [PR]` | Fix unresolved GitHub PR review comments |
+| `/init-agent-docs` | Initialize complete `.agent/` documentation structure |
 | `/update-ai-specs` | AI-assisted merge of upstream changes into adapted files |
 | `/meta-prompt [prompt]` | Improve a prompt using best practices |
 
