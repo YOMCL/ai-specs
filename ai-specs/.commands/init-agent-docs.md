@@ -49,16 +49,21 @@ If `.agent/` already exists, ask:
 
 > Note: No `Tasks/` directory — task management is handled by Linear.
 
-### Step 4: Launch feature-documenter agent in background
+### Step 4: Launch agents in background
 
-Immediately after the directories exist, spawn the `feature-documenter` agent in the background so it scans the codebase and populates `.agent/Features/` while the remaining setup steps continue in parallel.
+Immediately after the directories exist, spawn two agents in the background so they populate content while the remaining setup steps continue in parallel.
 
-Provide it with:
-- The target directory path
-- The project name and stack gathered in Step 1
-- The instruction to update `Features/README.md` when done
+**`feature-documenter`** — scans the codebase and populates `.agent/Features/`:
+- Target directory path
+- Project name and stack from Step 1
+- Instruction to update `Features/README.md` when done
 
-Continue to Step 5 without waiting for the agent to finish.
+**`doc-specialist`** — generates `.agent/System/` docs from the codebase:
+- Target directory path
+- Project name, stack, and type from Step 1
+- Instruction to generate all four System docs and update `System/README.md` when done
+
+Continue to Step 5 without waiting for either agent to finish.
 
 ### Step 5: Generate `.agent/README.md`
 

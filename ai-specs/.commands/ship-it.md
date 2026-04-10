@@ -38,13 +38,7 @@ Analyze the diff against main. If there are significant changes (new endpoints, 
 - **ai-specs/specs/base-standards.mdc**: Update Implementation Status, Key API Endpoints, Database Schema sections as needed.
 - **README.md**: Update feature lists, environment variables, or setup instructions as needed.
 
-If a `.agent/` directory exists in the project root, also update:
-- **`.agent/Features/`**: If a new feature was added, create or update the corresponding feature doc using `.agent/Features/_template.md` as the base. Then update `.agent/Features/README.md` to include the new file in the index table.
-- **`.agent/System/architecture-overview.md`**: If the architecture changed (new module, new service, new integration).
-- **`.agent/System/database-schema.md`**: If new DB tables, collections, or schemas were added or modified.
-- **`.agent/System/deployment-guide.md`**: If deployment steps, environment variables, or infrastructure changed.
-- **`.agent/System/README.md`**: If new files were added to `System/`, add them to the index table.
-- **`.agent/README.md`**: If new files were added anywhere under `.agent/`, update the root index table.
+If a `.agent/` directory exists in the project root, run `/update-agent-docs` to keep the documentation in sync with the changes.
 
 If `update-ai-specs.sh` exists in the repo root, this is the ai-specs framework repo. Distribute the changes to all relevant system repos before committing:
 
