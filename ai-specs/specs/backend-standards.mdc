@@ -1,15 +1,18 @@
 ---
-description: Backend development standards, best practices, and conventions for Node.js/TypeScript projects including NestJS microservices, Domain-Driven Design, Hexagonal Architecture, SOLID principles, API design, and testing practices. Adapt the stack-specific sections to match the project's actual technology choices.
+description: Backend development standards, best practices, and conventions for the YOM platform. Covers NestJS microservices (TypeScript strict, MongoDB+Mongoose), Moleculer services (Node.js, NATS), Domain-Driven Design, Hexagonal Architecture (NestJS only), SOLID principles, multi-tenancy, authentication, API design, and testing practices.
 globs: ["src/**/*.ts", "*.config.{js,ts}", "package.json", "tsconfig.json"]
 alwaysApply: true
 ---
 
-# Backend Project Standards and Best Practices
+# Backend Standards and Best Practices — YOM Platform
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
+- [Multi-Tenancy](#multi-tenancy)
+- [Authentication & Authorization](#authentication--authorization)
+- [Moleculer Services](#moleculer-services)
 - [Architecture Overview](#architecture-overview)
 - [Hexagonal Architecture (Ports & Adapters)](#hexagonal-architecture)
 - [Domain-Driven Design Principles](#domain-driven-design-principles)
@@ -25,35 +28,55 @@ alwaysApply: true
 
 ## Overview
 
-This document defines the standards for backend development across all projects. The architecture follows **Clean/Hexagonal Architecture** with **Domain-Driven Design (DDD)** principles to ensure code is maintainable, testable, and evolvable.
-
-> **Project-specific note**: This is a base template. Each project must adapt the Technology Stack section to reflect its actual choices (e.g., NestJS vs plain Node.js, MongoDB vs PostgreSQL).
+This document defines the backend development standards for the YOM platform. The platform has two primary backend paradigms: **NestJS microservices** (TypeScript strict, MongoDB+Mongoose, Hexagonal Architecture) and **Moleculer services** (Node.js, NATS autodiscovery). There is also one Python service (hermes, FastAPI). Standards in this document apply primarily to NestJS services unless explicitly noted otherwise.
 
 ---
 
 ## Technology Stack
 
-### Core Technologies (adapt per project)
-- **Runtime**: Node.js (v18+)
-- **Language**: TypeScript (strict mode, no `any`)
-- **Framework**:
-  - New microservices: **NestJS** (preferred)
-  - Legacy services: Plain Node.js or Express (maintain existing patterns)
-- **Package Manager**: npm or yarn (be consistent within the project)
+### Backend Paradigms
 
-### Database & ODM/ORM (adapt per project)
-- **Primary DB**: MongoDB with **Mongoose** as the ODM
-  - Define schemas with TypeScript interfaces
-  - Use `@Schema()`, `@Prop()` decorators in NestJS
-  - Create indexes in the schema definition, not migrations
-- **Alternative**: PostgreSQL with **Prisma** ORM (for relational data)
-  - Use Prisma schema for type-safe queries
-  - Always use `prisma migrate` for schema changes
+#### NestJS Services (TypeScript)
+Services: `customer` (FAQs, banners, T&Cs, announcements), `fintech` (payment providers, payment docs), `orders` (order management), `products` (PostgreSQL, relational), `chatbot-api`
+
+- **Runtime**: Node.js v18+
+- **Language**: TypeScript (strict mode, `"strict": true`, no `any`)
+- **Framework**: NestJS
+- **Package Manager**: npm
+- **Primary DB**: MongoDB with Mongoose ODM
+- **Relational DB** (products service): PostgreSQL with Prisma ORM
+- **Architecture**: Hexagonal Architecture + DDD
+
+#### Moleculer Services (Node.js)
+Services: `yom-api` (Express+Moleculer, MongoDB+PostgreSQL), `yom-gateway` (API gateway), `yom-catalog`, `yom-payments`, `yom-store`, `yom-promotions`, `yom-transactions`, and others
+
+- **Framework**: Moleculer
+- **Service discovery**: NATS (autodiscovery, port 4222)
+- **Language**: Node.js (JavaScript or TypeScript — follow the existing pattern per service)
+- **Architecture**: Moleculer service patterns — do NOT apply Hexagonal Architecture here
+
+#### Python Service
+- `hermes`: FastAPI — follow Python conventions for this service only
+
+### Infrastructure
+| Component | Technology | Port |
+|-----------|-----------|------|
+| MongoDB | MongoDB | 27017 |
+| PostgreSQL | PostgreSQL | 5433 |
+| Redis | Redis | 6379 |
+| Message bus | NATS | 4222 |
+
+### Shared Packages (GitHub Packages registry)
+All `@yomcl/*` packages require the `TOKEN_PACKAGE` environment variable set to a valid GitHub Packages token.
+
+- `@yomcl/types` — shared TypeScript types
+- `@yomcl/utils` — shared utility functions
+- `@yomcl/jwt-verify` — JWT authentication guards
 
 ### Testing Framework
-- **Unit & Integration**: Jest with TypeScript support (`ts-jest`)
-- **E2E**: Cypress (for user-facing features)
-- **Coverage threshold**: 90% for branches, functions, lines, and statements
+- **Unit & Integration**: Jest with `ts-jest` (NestJS services)
+- **Moleculer**: Jest (plain Node.js test runner)
+- **Coverage threshold (NestJS)**: 90% for branches, functions, lines, and statements
 
 ### Development Tools
 - **Linting**: ESLint with TypeScript rules
@@ -62,9 +85,147 @@ This document defines the standards for backend development across all projects.
 
 ---
 
+## Multi-Tenancy
+
+Every YOM MongoDB query in NestJS services **must be scoped to `customerId`**. This is a hard rule — unscoped queries are a data isolation bug.
+
+### Rule
+- Every repository method that reads or writes data must accept and apply a `customerId` filter
+- The `customerId` comes from the authenticated request context (decoded JWT) and is passed down through the use case to the repository
+- Never call `find()`, `findOne()`, `findById()`, `findByIdAndUpdate()`, etc. without including `{ customerId }` in the filter
+
+### Correct vs Wrong
+
+```typescript
+// CORRECT — always scope queries to customerId
+async findAll(customerId: string): Promise<Banner[]> {
+  const docs = await this.model
+    .find({ customerId })
+    .lean()
+    .exec();
+  return docs.map(BannerMapper.toDomain);
+}
+
+async findById(id: string, customerId: string): Promise<Banner | null> {
+  const doc = await this.model
+    .findOne({ _id: id, customerId })
+    .lean()
+    .exec();
+  return doc ? BannerMapper.toDomain(doc) : null;
+}
+
+// WRONG — missing customerId scope, leaks data across tenants
+async findAll(): Promise<Banner[]> {
+  return this.model.find().lean().exec(); // never do this
+}
+
+async findById(id: string): Promise<Banner | null> {
+  return this.model.findById(id).lean().exec(); // never do this
+}
+```
+
+### Schema Design
+```typescript
+@Schema({ timestamps: true, collection: 'banners' })
+export class BannerDocument {
+  @Prop({ required: true, index: true })
+  customerId: string; // always present, always indexed
+
+  @Prop({ required: true })
+  title: string;
+
+  @Prop({ required: true, enum: ['active', 'inactive'] })
+  status: string;
+}
+
+export const BannerSchema = SchemaFactory.createForClass(BannerDocument);
+BannerSchema.index({ customerId: 1, createdAt: -1 });
+```
+
+---
+
+## Authentication & Authorization
+
+YOM uses `@yomcl/jwt-verify` for authentication. Do not use `@nestjs/jwt` or Passport directly in YOM services.
+
+### Guards
+
+| Guard | Purpose |
+|-------|---------|
+| `AdminGuard` | Requires a valid admin JWT — for internal admin operations |
+| `ReadGuard` | Requires a valid JWT with read permissions |
+| `StoreGuard` | Requires a valid store-scoped JWT — for store-facing endpoints |
+
+### Usage
+
+```typescript
+import { AdminGuard, ReadGuard, StoreGuard } from '@yomcl/jwt-verify';
+
+// Admin-only endpoint
+@Controller('banners')
+@UseGuards(AdminGuard)
+export class BannerAdminController {
+  @Post()
+  @HttpCode(201)
+  async create(@Body() dto: CreateBannerDto): Promise<CreateBannerResponseDto> {
+    return this.bannerService.create(dto);
+  }
+}
+
+// Read endpoint accessible with any valid token
+@Controller('banners')
+@UseGuards(ReadGuard)
+export class BannerController {
+  @Get()
+  async findAll(@Request() req): Promise<BannerResponseDto[]> {
+    const { customerId } = req.user; // customerId always comes from the JWT
+    return this.bannerService.findAll(customerId);
+  }
+}
+
+// Store-facing endpoint
+@Controller('store/banners')
+@UseGuards(StoreGuard)
+export class BannerStoreController {
+  @Get()
+  async findActive(@Request() req): Promise<BannerResponseDto[]> {
+    const { customerId } = req.user;
+    return this.bannerService.findActive(customerId);
+  }
+}
+```
+
+### Environment Variable
+The `@yomcl/jwt-verify` package requires `TOKEN_PACKAGE` to be set in the environment. Always include it in `.env.example`:
+
+```env
+TOKEN_PACKAGE=your_github_packages_token
+```
+
+---
+
+## Moleculer Services
+
+Moleculer services (`yom-api`, `yom-gateway`, `yom-catalog`, `yom-payments`, `yom-store`, `yom-promotions`, `yom-transactions`, etc.) follow the Moleculer framework conventions and patterns. **Do not apply Hexagonal Architecture or NestJS-specific patterns to these services.**
+
+### Key Characteristics
+- Services autodiscover each other via NATS (no manual service registry)
+- Actions are defined on service schemas — not controllers
+- Inter-service calls use `this.broker.call('service.action', params)`
+- `yom-api` uses Express alongside Moleculer for HTTP routing
+
+### When Working on a Moleculer Service
+- Follow the existing file and folder structure of the service
+- Define actions on the service schema (`actions: { ... }`)
+- Use `this.broker.call` for inter-service communication
+- Tests use Jest; mock `this.broker` for unit tests
+- Do NOT introduce NestJS decorators, modules, or DI patterns into Moleculer services
+
+---
+
 ## Architecture Overview
 
-### Hexagonal Architecture
+### Hexagonal Architecture (NestJS services only)
 
 The application is organized in concentric layers. Dependencies always point **inward**:
 
@@ -83,7 +244,7 @@ Infrastructure (DB, APIs)    ← Implements domain interfaces
 src/
 ├── domain/                  # Pure business logic — zero framework dependencies
 │   ├── entities/            # Domain entities with business behavior
-│   ├── value-objects/       # Immutable typed values (Email, Money, etc.)
+│   ├── value-objects/       # Immutable typed values (Money, Slug, etc.)
 │   ├── events/              # Domain events
 │   └── repositories/        # Repository interfaces (ports) — NOT implementations
 ├── application/             # Orchestration layer
@@ -102,14 +263,9 @@ src/
     └── utils/               # Pure utility functions
 ```
 
-**Project structure for legacy Node.js (maintain existing patterns):**
-```
-src/
-├── presentation/            # Controllers and routes
-├── application/             # Services and validators
-├── domain/                  # Domain models and repository interfaces
-└── infrastructure/          # DB access and external services
-```
+### Inter-Service Communication
+- **NestJS services**: call external HTTP APIs directly (standard HTTP clients)
+- **Moleculer services**: autodiscover and communicate via NATS
 
 ---
 
@@ -121,41 +277,44 @@ Entities have identity and encapsulate business behavior:
 
 ```typescript
 // Good: Entity with behavior, validates invariants in constructor
-export class Candidate {
+export class Banner {
   private constructor(
-    public readonly id: CandidateId,
-    private email: Email,
-    private name: FullName,
-    private applications: Application[] = [],
+    public readonly id: BannerId,
+    private title: string,
+    private status: BannerStatus,
+    private readonly customerId: string,
   ) {}
 
-  static create(props: CreateCandidateProps): Candidate {
-    return new Candidate(
-      CandidateId.generate(),
-      Email.create(props.email),
-      FullName.create(props.firstName, props.lastName),
+  static create(props: CreateBannerProps): Banner {
+    if (!props.customerId) {
+      throw new MissingCustomerIdError();
+    }
+    return new Banner(
+      BannerId.generate(),
+      props.title,
+      BannerStatus.ACTIVE,
+      props.customerId,
     );
   }
 
-  applyForPosition(position: Position): Application {
-    if (this.hasAppliedTo(position.id)) {
-      throw new DuplicateApplicationError(this.id, position.id);
+  deactivate(): void {
+    if (this.status === BannerStatus.INACTIVE) {
+      throw new BannerAlreadyInactiveError(this.id);
     }
-    const application = Application.create(this.id, position.id);
-    this.applications.push(application);
-    return application;
+    this.status = BannerStatus.INACTIVE;
   }
 
-  private hasAppliedTo(positionId: PositionId): boolean {
-    return this.applications.some(a => a.positionId.equals(positionId));
+  isActive(): boolean {
+    return this.status === BannerStatus.ACTIVE;
   }
 }
 
 // Bad: Anemic entity — just a data bag with no behavior
-export class Candidate {
+export class Banner {
   id: string;
-  email: string;
-  name: string;
+  title: string;
+  status: string;
+  customerId: string;
 }
 ```
 
@@ -164,21 +323,25 @@ export class Candidate {
 Immutable, validated at construction time:
 
 ```typescript
-export class Email {
+export class BannerId {
   private constructor(private readonly value: string) {}
 
-  static create(raw: string): Email {
-    if (!raw || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
-      throw new InvalidEmailError(raw);
+  static generate(): BannerId {
+    return new BannerId(new Types.ObjectId().toHexString());
+  }
+
+  static from(raw: string): BannerId {
+    if (!raw || !Types.ObjectId.isValid(raw)) {
+      throw new InvalidBannerIdError(raw);
     }
-    return new Email(raw.toLowerCase().trim());
+    return new BannerId(raw);
   }
 
   getValue(): string {
     return this.value;
   }
 
-  equals(other: Email): boolean {
+  equals(other: BannerId): boolean {
     return this.value === other.value;
   }
 }
@@ -189,16 +352,16 @@ export class Email {
 Define interfaces in the domain layer — implementations go in infrastructure:
 
 ```typescript
-// domain/repositories/candidate.repository.interface.ts
-export interface ICandidateRepository {
-  findById(id: CandidateId): Promise<Candidate | null>;
-  findByEmail(email: Email): Promise<Candidate | null>;
-  save(candidate: Candidate): Promise<void>;
-  delete(id: CandidateId): Promise<void>;
+// domain/repositories/banner.repository.interface.ts
+export interface IBannerRepository {
+  findById(id: BannerId, customerId: string): Promise<Banner | null>;
+  findAll(customerId: string): Promise<Banner[]>;
+  save(banner: Banner): Promise<void>;
+  delete(id: BannerId, customerId: string): Promise<void>;
 }
 
-// In NestJS, register with a token for injection:
-export const CANDIDATE_REPOSITORY = Symbol('ICandidateRepository');
+// Register with a symbol token for NestJS injection:
+export const BANNER_REPOSITORY = Symbol('IBannerRepository');
 ```
 
 ### Domain Events
@@ -206,11 +369,11 @@ export const CANDIDATE_REPOSITORY = Symbol('ICandidateRepository');
 Use domain events for side effects that cross aggregate boundaries:
 
 ```typescript
-export class CandidateAppliedEvent {
+export class BannerDeactivatedEvent {
   constructor(
-    public readonly candidateId: CandidateId,
-    public readonly positionId: PositionId,
-    public readonly appliedAt: Date,
+    public readonly bannerId: BannerId,
+    public readonly customerId: string,
+    public readonly deactivatedAt: Date,
   ) {}
 }
 ```
@@ -233,16 +396,16 @@ export class CandidateAppliedEvent {
 ```typescript
 // Good: depends on interface
 @Injectable()
-export class CandidateService {
+export class BannerService {
   constructor(
-    @Inject(CANDIDATE_REPOSITORY)
-    private readonly candidateRepository: ICandidateRepository,
+    @Inject(BANNER_REPOSITORY)
+    private readonly bannerRepository: IBannerRepository,
   ) {}
 }
 
 // Bad: depends on concrete class
-export class CandidateService {
-  private repo = new MongoCandidateRepository(); // never do this
+export class BannerService {
+  private repo = new MongoBannerRepository(); // never do this
 }
 ```
 
@@ -255,11 +418,11 @@ export class CandidateService {
 - **No `any`**: Use `unknown` and type guards if the type is truly unknown
 - **Explicit return types** on public methods
 - **Readonly** on properties that should not be reassigned
-- **Prefer union types** over enums for simple cases: `type Status = 'active' | 'inactive'`
+- **Prefer union types** over enums for simple cases: `type BannerStatus = 'active' | 'inactive'`
 
 ### Naming Conventions
 - Classes: `PascalCase`
-- Interfaces: `IInterfaceName` (e.g., `ICandidateRepository`)
+- Interfaces: `IInterfaceName` (e.g., `IBannerRepository`)
 - Files: `kebab-case.ts`
 - Constants: `UPPER_SNAKE_CASE`
 - Test files: `[name].spec.ts` (NestJS) or `[name].test.ts`
@@ -269,10 +432,17 @@ export class CandidateService {
 Use typed domain exceptions:
 
 ```typescript
-export class CandidateNotFoundException extends Error {
+export class BannerNotFoundException extends Error {
   constructor(id: string) {
-    super(`Candidate with id '${id}' was not found`);
-    this.name = 'CandidateNotFoundException';
+    super(`Banner with id '${id}' was not found`);
+    this.name = 'BannerNotFoundException';
+  }
+}
+
+export class MissingCustomerIdError extends Error {
+  constructor() {
+    super('customerId is required and cannot be empty');
+    this.name = 'MissingCustomerIdError';
   }
 }
 ```
@@ -292,7 +462,7 @@ HTTP status code mapping:
 - `401`: Unauthenticated
 - `403`: Unauthorized (authenticated but not permitted)
 - `404`: Resource not found
-- `409`: Conflict (e.g., duplicate email)
+- `409`: Conflict (e.g., duplicate entry)
 - `422`: Business rule violation
 - `500`: Unexpected server error
 
@@ -301,15 +471,15 @@ HTTP status code mapping:
 ## API Design Standards
 
 ### REST Endpoints
-- Use nouns, not verbs: `/candidates` not `/getCandidates`
-- Plural resource names: `/candidates`, `/positions`
-- Nested resources for relationships: `/positions/:id/candidates`
+- Use nouns, not verbs: `/banners` not `/getBanners`
+- Plural resource names: `/banners`, `/faqs`, `/customers`
+- Nested resources for relationships: `/customers/:id/banners`
 - HTTP methods: `GET` (read), `POST` (create), `PUT` (full update), `PATCH` (partial update), `DELETE`
 
 ### Response Patterns
 - Mutations always return a consistent envelope:
   ```json
-  { "message": "Candidate created successfully", "data": { } }
+  { "message": "Banner created successfully", "data": { } }
   ```
 - List endpoints must support pagination:
   ```json
@@ -318,20 +488,34 @@ HTTP status code mapping:
 
 ### NestJS Controller Example
 ```typescript
-@Controller('candidates')
-@UseGuards(JwtAuthGuard)
-export class CandidateController {
-  constructor(private readonly candidateService: CandidateService) {}
+@Controller('banners')
+@UseGuards(AdminGuard)
+export class BannerController {
+  constructor(private readonly bannerService: BannerService) {}
+
+  @Get()
+  async findAll(@Request() req): Promise<BannerResponseDto[]> {
+    const { customerId } = req.user;
+    return this.bannerService.findAll(customerId);
+  }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<CandidateResponseDto> {
-    return this.candidateService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<BannerResponseDto> {
+    const { customerId } = req.user;
+    return this.bannerService.findById(id, customerId);
   }
 
   @Post()
   @HttpCode(201)
-  async create(@Body() dto: CreateCandidateDto): Promise<CreateCandidateResponseDto> {
-    return this.candidateService.create(dto);
+  async create(
+    @Body() dto: CreateBannerDto,
+    @Request() req,
+  ): Promise<CreateBannerResponseDto> {
+    const { customerId } = req.user;
+    return this.bannerService.create({ ...dto, customerId });
   }
 }
 ```
@@ -343,62 +527,90 @@ export class CandidateController {
 ### MongoDB + Mongoose (NestJS)
 
 ```typescript
-// Schema definition with decorators
-@Schema({ timestamps: true, collection: 'candidates' })
-export class CandidateDocument {
-  @Prop({ required: true, trim: true, maxlength: 100 })
-  firstName: string;
+// Schema definition with decorators — always include customerId with an index
+@Schema({ timestamps: true, collection: 'banners' })
+export class BannerDocument {
+  @Prop({ required: true, index: true })
+  customerId: string;
 
-  @Prop({ required: true, unique: true, lowercase: true })
-  email: string;
+  @Prop({ required: true, trim: true, maxlength: 200 })
+  title: string;
+
+  @Prop({ required: true, enum: ['active', 'inactive'], default: 'active' })
+  status: string;
 }
 
-export const CandidateSchema = SchemaFactory.createForClass(CandidateDocument);
-CandidateSchema.index({ email: 1 }, { unique: true });
-CandidateSchema.index({ createdAt: -1 });
+export const BannerSchema = SchemaFactory.createForClass(BannerDocument);
+BannerSchema.index({ customerId: 1, createdAt: -1 });
+BannerSchema.index({ customerId: 1, status: 1 });
 ```
 
 ```typescript
-// Repository implementation
+// Repository implementation — always include customerId in every query
 @Injectable()
-export class MongoCandidateRepository implements ICandidateRepository {
+export class MongoBannerRepository implements IBannerRepository {
   constructor(
-    @InjectModel(CandidateDocument.name)
-    private readonly model: Model<CandidateDocument>,
+    @InjectModel(BannerDocument.name)
+    private readonly model: Model<BannerDocument>,
   ) {}
 
-  async findById(id: CandidateId): Promise<Candidate | null> {
-    const doc = await this.model.findById(id.value).lean().exec();
-    return doc ? CandidateMapper.toDomain(doc) : null;
+  async findById(id: BannerId, customerId: string): Promise<Banner | null> {
+    const doc = await this.model
+      .findOne({ _id: id.getValue(), customerId })
+      .lean()
+      .exec();
+    return doc ? BannerMapper.toDomain(doc) : null;
   }
 
-  async save(candidate: Candidate): Promise<void> {
-    const doc = CandidateMapper.toPersistence(candidate);
-    await this.model.findByIdAndUpdate(doc._id, doc, { upsert: true, new: true }).exec();
+  async findAll(customerId: string): Promise<Banner[]> {
+    const docs = await this.model
+      .find({ customerId })
+      .lean()
+      .exec();
+    return docs.map(BannerMapper.toDomain);
+  }
+
+  async save(banner: Banner): Promise<void> {
+    const doc = BannerMapper.toPersistence(banner);
+    await this.model
+      .findByIdAndUpdate(doc._id, doc, { upsert: true, new: true })
+      .exec();
+  }
+
+  async delete(id: BannerId, customerId: string): Promise<void> {
+    await this.model.findOneAndDelete({ _id: id.getValue(), customerId }).exec();
   }
 }
 ```
 
 ### Mongoose Best Practices
-- Always define indexes in the schema definition
+- Always include `customerId` in every query — no exceptions
+- Always define indexes in the schema definition (never in separate migration files)
 - Use `.lean()` for read-only queries — returns plain JS objects, not Mongoose documents
 - Use `findByIdAndUpdate` with `upsert: true` for save/create operations
 - Use `populate()` only when you need related documents in the response; avoid for performance-critical paths
 - Handle Mongoose errors: `CastError` → 400, `MongoServerError` code 11000 (unique violation) → 409
 
-### PostgreSQL + Prisma (when applicable)
+### PostgreSQL + Prisma (products service)
 
 ```typescript
 @Injectable()
-export class PrismaCandidateRepository implements ICandidateRepository {
+export class PrismaFAQRepository implements IFAQRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: CandidateId): Promise<Candidate | null> {
-    const record = await this.prisma.candidate.findUnique({
-      where: { id: id.value },
-      include: { applications: true },
+  async findById(id: string, customerId: string): Promise<FAQ | null> {
+    const record = await this.prisma.fAQ.findFirst({
+      where: { id, customerId },
     });
-    return record ? CandidateMapper.toDomain(record) : null;
+    return record ? FAQMapper.toDomain(record) : null;
+  }
+
+  async findAll(customerId: string): Promise<FAQ[]> {
+    const records = await this.prisma.fAQ.findMany({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return records.map(FAQMapper.toDomain);
   }
 }
 ```
@@ -413,45 +625,59 @@ Always follow RED → GREEN → REFACTOR:
 2. Write the minimum code to make the test pass
 3. Refactor while keeping all tests green
 
-### Unit Testing (Jest)
+### Unit Testing (Jest + ts-jest) — NestJS Services
 
 ```typescript
-describe('CandidateService', () => {
-  let service: CandidateService;
-  let repository: jest.Mocked<ICandidateRepository>;
+describe('BannerService', () => {
+  let service: BannerService;
+  let repository: jest.Mocked<IBannerRepository>;
 
   beforeEach(() => {
     repository = {
       findById: jest.fn(),
-      findByEmail: jest.fn(),
+      findAll: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
     };
-    service = new CandidateService(repository);
+    service = new BannerService(repository);
   });
 
   afterEach(() => jest.clearAllMocks());
 
   describe('findById', () => {
-    it('should return candidate when found', async () => {
-      const candidate = createMockCandidate({ id: '1' });
-      repository.findById.mockResolvedValue(candidate);
+    it('should return banner when found for the given customerId', async () => {
+      const banner = createMockBanner({ id: 'abc123', customerId: 'cust_1' });
+      repository.findById.mockResolvedValue(banner);
 
-      const result = await service.findById('1');
+      const result = await service.findById('abc123', 'cust_1');
 
-      expect(result).toEqual(candidate);
+      expect(result).toEqual(banner);
+      expect(repository.findById).toHaveBeenCalledWith(
+        expect.objectContaining({ value: 'abc123' }),
+        'cust_1',
+      );
     });
 
-    it('should throw CandidateNotFoundException when not found', async () => {
+    it('should throw BannerNotFoundException when not found', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(service.findById('999')).rejects.toThrow(CandidateNotFoundException);
+      await expect(service.findById('999', 'cust_1')).rejects.toThrow(
+        BannerNotFoundException,
+      );
+    });
+
+    it('should never return banners belonging to a different customerId', async () => {
+      repository.findById.mockResolvedValue(null); // scoped query returns nothing
+
+      await expect(service.findById('abc123', 'cust_other')).rejects.toThrow(
+        BannerNotFoundException,
+      );
     });
   });
 });
 ```
 
-### Coverage Requirements
+### Coverage Requirements (NestJS services)
 ```json
 {
   "coverageThreshold": {
@@ -469,35 +695,39 @@ describe('CandidateService', () => {
 1. Happy path — nominal input produces expected output
 2. Boundary values — min/max lengths, zero, empty
 3. Null/undefined inputs — missing required fields
-4. Error cases — which exceptions are thrown and when
-5. Async behavior — resolved and rejected promises
+4. Multi-tenancy — queries are correctly scoped to `customerId`
+5. Error cases — which exceptions are thrown and when
+6. Async behavior — resolved and rejected promises
 
 ---
 
 ## Security Best Practices
 
 - **Input validation**: Use `class-validator` + `class-transformer` in NestJS DTOs
-- **Authentication**: JWT tokens via `@nestjs/jwt` + Passport strategy
-- **Environment variables**: Access only via `ConfigService`, never `process.env` directly
-- **Secrets**: Never commit `.env` files; use `.env.example` for documentation
+- **Authentication**: Use `@yomcl/jwt-verify` guards (`AdminGuard`, `ReadGuard`, `StoreGuard`) — never roll custom JWT logic
+- **Environment variables**: Access only via `ConfigService`, never `process.env` directly in domain or application code
+- **Secrets**: Never commit `.env` files; always maintain `.env.example` with all required keys (including `TOKEN_PACKAGE`)
 - **Injection prevention**: Mongoose typed schemas prevent NoSQL injection; Prisma uses parameterized queries
 - **Rate limiting**: `@nestjs/throttler` for public endpoints
 - **CORS**: Configure explicitly per environment; never use `*` in production
+- **Multi-tenancy**: Every query must be scoped to `customerId` — treat unscoped queries as security vulnerabilities
 
 ```typescript
 // NestJS DTO with validation
-export class CreateCandidateDto {
+export class CreateBannerDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  firstName: string;
+  @MaxLength(200)
+  title: string;
 
-  @IsEmail()
-  email: string;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description: string;
 
   @IsOptional()
-  @IsString()
-  phone?: string;
+  @IsUrl()
+  imageUrl?: string;
 }
 ```
 
@@ -506,17 +736,23 @@ export class CreateCandidateDto {
 ## Development Workflow
 
 ### Git Workflow
-- Main branch: `main` (protected, no direct pushes)
+- Main branch: `production` (protected, no direct pushes)
 - Feature branches: `feature/[ticket-id]-backend`
 - Bugfix branches: `fix/[ticket-id]-description`
 - Commit messages follow **Conventional Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`
 
+### CI/CD
+- GitHub Actions handles CI/CD
+- Plan runs on PR open/update
+- Apply (deploy) runs on merge to `production`
+
 ### Pre-commit Checklist
 1. `npm run lint` — zero linting errors
 2. `tsc --noEmit` — zero TypeScript errors
-3. `npm test` — all tests pass, coverage >= 90%
-4. Update `ai-specs/specs/api-spec.yml` if endpoints changed
-5. Update `ai-specs/specs/data-model.md` if schema changed
+3. `npm test` — all tests pass, coverage >= 90% (NestJS services)
+4. Verify `TOKEN_PACKAGE` is documented in `.env.example` if a new `@yomcl/*` package was added
+5. Update `ai-specs/specs/api-spec.yml` if endpoints changed
+6. Update `ai-specs/specs/data-model.md` if schema changed
 
 ### Development Scripts
 ```bash

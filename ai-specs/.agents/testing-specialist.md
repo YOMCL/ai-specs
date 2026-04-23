@@ -5,13 +5,13 @@ description: Use this agent when you need to design, write, or review tests for 
 Examples:
 <example>
 Context: The user needs tests for a new service they just wrote.
-user: "Write tests for the CandidateService class"
+user: "Write tests for the BannerService in the customer microservice"
 assistant: "I'll use the testing-specialist agent to write comprehensive tests following TDD principles."
 <commentary>Writing tests for application code is the testing-specialist's primary function.</commentary>
 </example>
 <example>
 Context: The user wants to improve test coverage.
-user: "Our coverage is at 60%, help us reach 90%"
+user: "Our coverage on the fintech service is at 60%, help us reach 90%"
 assistant: "Let me use the testing-specialist agent to analyze coverage gaps and write the missing tests."
 <commentary>Coverage analysis and gap-filling is a testing-specialist task.</commentary>
 </example>
@@ -62,42 +62,43 @@ You design tests at the right level:
 
 **Example unit test structure:**
 ```typescript
-describe('CandidateService', () => {
-  let candidateService: CandidateService;
-  let candidateRepository: jest.Mocked<ICandidateRepository>;
+describe('BannerService', () => {
+  let bannerService: BannerService;
+  let bannerRepository: jest.Mocked<IBannerRepository>;
 
   beforeEach(() => {
-    candidateRepository = {
+    bannerRepository = {
+      findBanners: jest.fn(),
       findById: jest.fn(),
       save: jest.fn(),
     };
-    candidateService = new CandidateService(candidateRepository);
+    bannerService = new BannerService(bannerRepository);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('findById', () => {
-    it('should return candidate when found', async () => {
+  describe('findBanners', () => {
+    it('should return banners for the given customerId', async () => {
       // Arrange
-      const candidate = { id: '1', name: 'John Doe' };
-      candidateRepository.findById.mockResolvedValue(candidate);
+      const banners = [{ id: 'banner_1', customerId: 'cust_abc', title: 'Summer Sale' }];
+      bannerRepository.findBanners.mockResolvedValue(banners);
 
       // Act
-      const result = await candidateService.findById('1');
+      const result = await bannerService.findBanners('cust_abc');
 
       // Assert
-      expect(result).toEqual(candidate);
-      expect(candidateRepository.findById).toHaveBeenCalledWith('1');
+      expect(result).toEqual(banners);
+      expect(bannerRepository.findBanners).toHaveBeenCalledWith('cust_abc');
     });
 
-    it('should throw NotFoundException when candidate not found', async () => {
+    it('should throw BannerNotFoundException when banner not found', async () => {
       // Arrange
-      candidateRepository.findById.mockResolvedValue(null);
+      bannerRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(candidateService.findById('999')).rejects.toThrow(NotFoundException);
+      await expect(bannerService.findById('banner_999')).rejects.toThrow(BannerNotFoundException);
     });
   });
 });
@@ -121,19 +122,19 @@ describe('CandidateService', () => {
 
 **Example Cypress test:**
 ```typescript
-describe('Candidate Registration', () => {
+describe('Banner Management', () => {
   beforeEach(() => {
-    cy.intercept('POST', '/api/candidates', { statusCode: 201, body: { id: '1' } }).as('createCandidate');
-    cy.visit('/candidates/new');
+    cy.intercept('POST', '/api/banners', { statusCode: 201, body: { id: 'banner_1', title: 'Summer Sale' } }).as('createBanner');
+    cy.visit('/banners/new');
   });
 
-  it('should create a new candidate successfully', () => {
-    cy.get('[data-testid="first-name-input"]').type('John');
-    cy.get('[data-testid="last-name-input"]').type('Doe');
-    cy.get('[data-testid="email-input"]').type('john@example.com');
+  it('should create a new banner successfully', () => {
+    cy.get('[data-testid="banner-title-input"]').type('Summer Sale');
+    cy.get('[data-testid="banner-image-url-input"]').type('https://cdn.yom.ai/banners/summer-sale.png');
+    cy.get('[data-testid="banner-position-input"]').clear().type('1');
     cy.get('[data-testid="submit-button"]').click();
 
-    cy.wait('@createCandidate');
+    cy.wait('@createBanner');
     cy.get('[data-testid="success-message"]').should('be.visible');
   });
 });

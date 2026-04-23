@@ -1,5 +1,5 @@
 ---
-description: Frontend development standards, best practices, and conventions for React and Next.js projects including component patterns, state management, UI/UX guidelines, and testing practices. Adapt the stack-specific sections to match the project's actual technology choices.
+description: Frontend development standards, best practices, and conventions for YOM's React/Next.js frontend applications (admin and b2b), covering component patterns, state management with SWR, MUI styling, API communication via Axios, and testing practices.
 globs: ["src/**/*.{js,jsx,ts,tsx}", "app/**/*.{ts,tsx}", "cypress/**/*.{ts,js}", "tsconfig.json", "package.json"]
 alwaysApply: true
 ---
@@ -24,52 +24,61 @@ alwaysApply: true
 
 ## Overview
 
-This document defines the standards for frontend development. All projects use React with TypeScript. New projects default to **Next.js (App Router)**; legacy projects may use Create React App or Vite.
+This document defines the standards for YOM frontend development. YOM has two Next.js frontend applications:
 
-> **Project-specific note**: This is a base template. Adapt the Technology Stack and Project Structure sections to match the actual project.
+- **admin** — Next.js App Router, MUI v5, Azure AD (MSAL) auth. Runs on port **3002**.
+- **b2b** — Next.js 16, React 19, MUI v7, Cypress E2E. Runs on port **3006**.
+
+Both apps share the same conventions described in this document.
 
 ---
 
 ## Technology Stack
 
-### Core Technologies (adapt per project)
-- **Framework**: Next.js 14+ (App Router) for new projects, or React 18+ for SPAs
-- **Language**: TypeScript (strict mode — required for all new files)
-- **Styling**: Tailwind CSS (preferred for new projects) or CSS Modules
-- **UI Components**: Shadcn/ui, Radix UI, or React Bootstrap (check project before adding new ones)
+### Core Technologies
+- **Framework**: Next.js App Router (admin) / Next.js 16 (b2b)
+- **Language**: TypeScript — strict mode required for all files
+- **UI Library**: Material UI (MUI) — v5 in admin, v7 in b2b
+- **Package manager**: npm
 
 ### State Management & Data Flow
-- **Server state**: TanStack Query (`@tanstack/react-query`) for data fetching and caching
-- **Local state**: React `useState` / `useReducer` for component-level state
-- **Global state**: Zustand or React Context (for simple global state only)
-- **Forms**: React Hook Form + Zod for validation
+- **Server state**: SWR (`swr`) — caching, revalidation, loading/error states
+- **Local state**: React `useState` / `useReducer` — component-level only
+- **Global client state**: React Context — no Zustand, no Redux
+- **Forms**: react-hook-form (via minimals components integration)
 
 ### Testing Framework
 - **Unit & Component**: Jest + React Testing Library
-- **E2E**: Cypress
+- **E2E**: Cypress (b2b)
 - **Coverage threshold**: 80% on component logic (business logic in hooks/services)
 
 ### HTTP Client
-- **Axios** or native `fetch` (Next.js) — be consistent per project
-- Centralize all API calls in a service layer
+- **Axios** — two configured instances:
+  - **v3 instance**: routes through `yom-gateway` (new path)
+  - **legacy instance**: routes through `yom-api`
+- All API calls are centralized in the service layer — components never call Axios directly
+
+### Authentication
+- **admin**: MSAL (Azure AD) — context-based auth via `@azure/msal-react`
+- **b2b**: session/context-based auth
 
 ---
 
 ## Project Structure
 
-### Next.js (App Router)
+### Next.js App (admin / b2b)
 ```
 src/
 ├── app/                     # Next.js App Router pages and layouts
 │   ├── (auth)/              # Route groups
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Home page
-├── components/              # Reusable UI components
-│   ├── ui/                  # Base atoms (Button, Input, Card — Shadcn/ui)
-│   ├── shared/              # Shared composite components
-│   └── [feature]/           # Feature-specific components
-├── hooks/                   # Custom React hooks
-├── services/                # API communication layer
+├── components/              # UI components
+│   ├── sections/            # Feature views (client components, page-level)
+│   ├── ui/                  # Reusable primitives (buttons, cards, inputs)
+│   └── minimals/            # Base components (react-hook-form, iconify integration)
+├── hooks/                   # SWR domain hooks (useBanners, useCustomer, etc.)
+├── services/                # Axios API service layer
 ├── lib/                     # Utility functions, constants, configs
 ├── types/                   # Shared TypeScript types and interfaces
 └── styles/                  # Global styles
@@ -77,49 +86,38 @@ cypress/
 └── e2e/                     # E2E tests organized by feature
 ```
 
-### React SPA (Vite/CRA)
-```
-src/
-├── components/              # Reusable UI components
-├── pages/                   # Page-level components
-├── services/                # API service layer
-├── hooks/                   # Custom hooks
-├── types/                   # TypeScript types
-├── utils/                   # Utility functions
-├── App.tsx                  # Root component with routing
-└── index.tsx                # Entry point
-cypress/
-└── e2e/                     # E2E tests organized by feature
-```
+### Component Layer Responsibilities
+- **`sections/`**: Full feature views — composed of ui/ primitives + hooks. These are `'use client'` components.
+- **`ui/`**: Pure UI atoms and molecules — reusable across sections. Minimal business logic.
+- **`minimals/`**: Integration layer for react-hook-form and iconify — wraps third-party primitives with YOM conventions.
 
 ---
 
 ## Coding Standards
 
 ### Naming Conventions
-- **Components**: `PascalCase` — `CandidateCard.tsx`, `PositionDetails.tsx`
-- **Hooks**: `camelCase` with `use` prefix — `useCandidate.ts`, `useFormValidation.ts`
-- **Services**: `camelCase` with `Service` suffix — `candidateService.ts`
-- **Constants**: `UPPER_SNAKE_CASE` — `MAX_CANDIDATES_PER_PAGE`
-- **Types/Interfaces**: `PascalCase` — `CandidateData`, `PositionProps`
-- **CSS classes**: `kebab-case` — `candidate-card`, `position-details`
-- **Files**: component files `PascalCase.tsx`, utility files `camelCase.ts`
+- **Components**: `PascalCase` — `BannerCard.tsx`, `CustomerDetails.tsx`
+- **Hooks**: `camelCase` with `use` prefix — `useBanners.ts`, `useCustomer.ts`
+- **Services**: `camelCase` with `Service` suffix — `bannerService.ts`
+- **Constants**: `UPPER_SNAKE_CASE` — `MAX_ITEMS_PER_PAGE`
+- **Types/Interfaces**: `PascalCase` — `BannerData`, `CustomerProps`
+- **Files**: component files `PascalCase.tsx`, utility/service/hook files `camelCase.ts`
 
 ### TypeScript
 - Strict mode enabled — no `any` in new code
-- Define explicit TypeScript types for all component props and hook return values
+- Define explicit types for all component props and hook return values
 - Use `type` for simple shapes, `interface` for extensible contracts
 - Prefer `unknown` over `any` when the type is genuinely unknown
 
 ```typescript
 // Good: Explicit typed props
-type CandidateCardProps = {
-  candidate: Candidate;
-  onSelect: (candidate: Candidate) => void;
+type BannerCardProps = {
+  banner: Banner;
+  onEdit: (banner: Banner) => void;
   isSelected?: boolean;
 };
 
-const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSelected = false }) => {
+const BannerCard: React.FC<BannerCardProps> = ({ banner, onEdit, isSelected = false }) => {
   // ...
 };
 ```
@@ -136,21 +134,20 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
 - Always use functional components with hooks
 - No class components in new code
 
-### Component Composition (Atomic Design)
-- **Atoms**: Basic UI elements (Button, Input, Badge) — usually from UI library
-- **Molecules**: Combinations of atoms (SearchBar, FormField)
-- **Organisms**: Complex UI sections (CandidateList, PositionCard)
-- **Pages/Templates**: Full page layouts
+### Component Composition
+- **`ui/`**: Basic, reusable UI elements — use MUI as foundation
+- **`sections/`**: Complex feature views composed from ui/ — one section per major page area
+- **`minimals/`**: Third-party integration wrappers — not to be modified frequently
 
 ### Props
 - Destructure props in the function signature
 - Provide default values for optional props
-- Never pass raw objects — define a type for props
+- Never pass raw objects without a defined type
 
 ```typescript
-const Button: React.FC<ButtonProps> = ({
+const ActionButton: React.FC<ActionButtonProps> = ({
   children,
-  variant = 'primary',
+  variant = 'contained',
   disabled = false,
   onClick,
 }) => { /* ... */ };
@@ -160,14 +157,18 @@ const Button: React.FC<ButtonProps> = ({
 Every component that fetches data must handle all three states:
 
 ```typescript
-const CandidateList: React.FC = () => {
-  const { data: candidates, isLoading, error } = useCandidates();
+const BannerList: React.FC = () => {
+  const { data: banners, isLoading, error } = useBanners(customerId);
 
-  if (isLoading) return <Spinner />;
-  if (error) return <ErrorMessage message="Failed to load candidates" />;
-  if (!candidates?.length) return <EmptyState message="No candidates found" />;
+  if (isLoading) return <CircularProgress />;
+  if (error) return <Alert severity="error">Failed to load banners</Alert>;
+  if (!banners?.length) return <Typography>No banners found</Typography>;
 
-  return <ul>{candidates.map(c => <CandidateCard key={c.id} candidate={c} />)}</ul>;
+  return (
+    <Stack spacing={2}>
+      {banners.map(b => <BannerCard key={b.id} banner={b} />)}
+    </Stack>
+  );
 };
 ```
 
@@ -175,52 +176,89 @@ const CandidateList: React.FC = () => {
 
 ## State Management
 
-### Server State (TanStack Query)
-Use TanStack Query for all server data — it handles caching, revalidation, and loading/error states:
+### Server State (SWR)
+Use SWR for all server data — it handles caching, revalidation, and loading/error states. Domain hooks live in `src/hooks/`.
 
 ```typescript
-export function useCandidates(filters?: CandidateFilters) {
-  return useQuery({
-    queryKey: ['candidates', filters],
-    queryFn: () => candidateService.getAll(filters),
-    staleTime: 5 * 60 * 1000,
-  });
+// hooks/useBanners.ts
+import useSWR from 'swr';
+import { bannerService } from '@/services/bannerService';
+
+export function useBanners(customerId: string) {
+  return useSWR(['banners', customerId], () => bannerService.getAll(customerId));
 }
 
-export function useCreateCandidate() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: candidateService.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['candidates'] }),
-  });
+export function useBanner(id: string) {
+  return useSWR(id ? ['banner', id] : null, () => bannerService.getById(id));
 }
+```
+
+**SWR conventions:**
+- Key format: `[resourceName, ...params]` — enables targeted revalidation
+- Pass `null` as key to conditionally skip fetching (e.g., when id is undefined)
+- Use `mutate` from `useSWR` or global `mutate` to invalidate after mutations
+- Set `revalidateOnFocus: false` in global SWR config where appropriate
+
+```typescript
+// After a mutation — invalidate related keys
+const { mutate } = useBanners(customerId);
+await bannerService.update(id, data);
+mutate(); // revalidates the banners list
 ```
 
 ### Local State
 - Use `useState` for simple component-level state
-- Use `useReducer` for complex state logic with multiple sub-values
+- Use `useReducer` for complex state with multiple sub-values
 - Extract complex stateful logic into custom hooks
 
-### Forms (React Hook Form + Zod)
+### Global Client State (React Context)
+Use React Context for app-wide client state (auth, theme preferences, UI toggles). No Zustand, no Redux.
+
 ```typescript
-const schema = z.object({
-  firstName: z.string().min(2).max(100),
-  email: z.string().email(),
-  phone: z.string().optional(),
-});
+// contexts/AuthContext.tsx
+type AuthContextValue = {
+  user: User | null;
+  isAuthenticated: boolean;
+  logout: () => void;
+};
 
-type FormData = z.infer<typeof schema>;
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
-const CandidateForm: React.FC = () => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}
+```
+
+### Forms (react-hook-form)
+Use react-hook-form via the `minimals/` integration layer. Validation can use built-in rules or a resolver.
+
+```typescript
+import { useForm } from 'react-hook-form';
+
+type BannerFormData = {
+  title: string;
+  url: string;
+  active: boolean;
+};
+
+const BannerForm: React.FC = () => {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<BannerFormData>();
+
+  const onSubmit = async (data: BannerFormData) => {
+    await bannerService.create(data);
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <input {...register('firstName')} />
-      {errors.firstName && <span>{errors.firstName.message}</span>}
-      <button type="submit" disabled={isSubmitting}>Save</button>
+      <TextField
+        {...register('title', { required: 'Title is required' })}
+        error={!!errors.title}
+        helperText={errors.title?.message}
+        label="Title"
+      />
+      <Button type="submit" disabled={isSubmitting}>Save</Button>
     </form>
   );
 };
@@ -231,82 +269,135 @@ const CandidateForm: React.FC = () => {
 ## API Communication
 
 ### Service Layer
-Centralize all API calls in service files. Components never call APIs directly.
+Centralize all API calls in `src/services/`. Components and hooks never call Axios directly.
 
 ```typescript
-// services/candidateService.ts
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.REACT_APP_API_URL;
+// services/bannerService.ts
+import { axiosV3Instance } from '@/lib/axios'; // yom-gateway path
 
-export const candidateService = {
-  getAll: async (filters?: CandidateFilters): Promise<Candidate[]> => {
-    const response = await axios.get(`${API_BASE_URL}/candidates`, { params: filters });
+export const bannerService = {
+  getAll: async (customerId: string): Promise<Banner[]> => {
+    const response = await axiosV3Instance.get(`/customers/${customerId}/banners`);
     return response.data;
   },
 
-  create: async (data: CreateCandidateDto): Promise<Candidate> => {
-    const response = await axios.post(`${API_BASE_URL}/candidates`, data);
+  getById: async (id: string): Promise<Banner> => {
+    const response = await axiosV3Instance.get(`/banners/${id}`);
     return response.data;
   },
 
-  updateById: async (id: string, data: Partial<Candidate>): Promise<Candidate> => {
-    const response = await axios.patch(`${API_BASE_URL}/candidates/${id}`, data);
+  create: async (data: CreateBannerDto): Promise<Banner> => {
+    const response = await axiosV3Instance.post('/banners', data);
     return response.data;
+  },
+
+  update: async (id: string, data: Partial<Banner>): Promise<Banner> => {
+    const response = await axiosV3Instance.patch(`/banners/${id}`, data);
+    return response.data;
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await axiosV3Instance.delete(`/banners/${id}`);
   },
 };
 ```
 
-### Environment Variables
-- Next.js: `NEXT_PUBLIC_*` for client-side variables
-- CRA: `REACT_APP_*`
-- Never hardcode API URLs in component or service files
+### Axios Instances
+Two instances are configured in `src/lib/axios.ts`:
+
+- **`axiosV3Instance`**: base URL points to `yom-gateway` — use for all new endpoints
+- **`axiosLegacyInstance`**: base URL points to `yom-api` — use only for endpoints not yet migrated
+
+Always prefer the v3 instance for new service files.
+
+### Hook + Service Pattern
+The hook layer owns the SWR key and delegates data fetching to the service:
+
+```
+Component → useBanners() hook → SWR → bannerService.getAll() → Axios → yom-gateway
+```
 
 ---
 
 ## UI/UX Standards
 
+### Material UI (MUI)
+All styling is done with MUI — no Tailwind CSS, no custom CSS-in-JS outside MUI's `sx` prop.
+
+```typescript
+// sx prop for one-off styles
+<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', p: 3 }}>
+  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    Banners
+  </Typography>
+</Box>
+
+// Stack for flex layouts
+<Stack direction="row" spacing={2} alignItems="center">
+  <Button variant="contained">Save</Button>
+  <Button variant="outlined">Cancel</Button>
+</Stack>
+
+// Grid for responsive layouts
+<Grid container spacing={3}>
+  <Grid item xs={12} md={6}>
+    <BannerCard banner={banner} />
+  </Grid>
+</Grid>
+```
+
+**MUI conventions:**
+- Prefer MUI `spacing` units (multiples of 8px) over raw pixel values in `sx`
+- Use theme tokens (`theme.palette`, `theme.typography`) instead of hardcoded colors/sizes
+- Extend the theme in `src/lib/theme.ts` — never override MUI styles via global CSS
+
 ### Accessibility
-- Use semantic HTML (`nav`, `main`, `article`, `button` — not `div` for interactive elements)
-- Every interactive element must have an `aria-label` if purpose isn't clear from visible text
+- Use semantic HTML (`nav`, `main`, `article`, `button`) — not `div` for interactive elements
+- Every interactive element must have an `aria-label` if purpose is not clear from visible text
 - Keyboard navigation must work for all interactive elements
 - Images must have `alt` text
 
-### Responsive Design
-- Mobile-first approach
-- Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) or Bootstrap grid
-
 ### Loading & Feedback
-- Show loading state during async operations (Spinner or skeleton)
-- Show success/error feedback after form submissions
+- Show loading state during async operations — use MUI `CircularProgress` or `Skeleton`
+- Show success/error feedback after form submissions — use MUI `Alert` or `Snackbar`
 - Disable submit buttons during loading to prevent double-submit
 
 ---
 
 ## Testing Standards
 
-### Cypress E2E Tests
+### Cypress E2E Tests (b2b)
 
 Use `data-testid` attributes for all element selection — never CSS classes or text content:
 
 ```typescript
-// cypress/e2e/candidates.cy.ts
-describe('Candidate Registration', () => {
+// cypress/e2e/banners.cy.ts
+describe('Banner Management', () => {
   beforeEach(() => {
-    cy.intercept('POST', '/api/candidates', { statusCode: 201, body: { id: '1' } }).as('createCandidate');
-    cy.visit('/candidates/new');
+    cy.intercept('GET', '/api/v3/customers/*/banners', { fixture: 'banners.json' }).as('getBanners');
+    cy.visit('/banners');
   });
 
-  it('should create a new candidate successfully', () => {
-    cy.get('[data-testid="first-name-input"]').type('John');
-    cy.get('[data-testid="email-input"]').type('john@example.com');
-    cy.get('[data-testid="submit-button"]').click();
-
-    cy.wait('@createCandidate');
-    cy.get('[data-testid="success-message"]').should('be.visible');
+  it('should display the banner list', () => {
+    cy.wait('@getBanners');
+    cy.get('[data-testid="banner-card"]').should('have.length.greaterThan', 0);
   });
 
-  it('should display validation errors for invalid input', () => {
+  it('should create a new banner', () => {
+    cy.intercept('POST', '/api/v3/banners', { statusCode: 201, body: { id: '1' } }).as('createBanner');
+
+    cy.get('[data-testid="create-banner-button"]').click();
+    cy.get('[data-testid="banner-title-input"]').type('Summer Sale');
     cy.get('[data-testid="submit-button"]').click();
-    cy.get('[data-testid="email-error"]').should('contain', 'Email is required');
+
+    cy.wait('@createBanner');
+    cy.get('[data-testid="success-alert"]').should('be.visible');
+  });
+
+  it('should show validation errors for empty form', () => {
+    cy.get('[data-testid="create-banner-button"]').click();
+    cy.get('[data-testid="submit-button"]').click();
+    cy.get('[data-testid="title-error"]').should('contain', 'Title is required');
   });
 });
 ```
@@ -316,23 +407,30 @@ describe('Candidate Registration', () => {
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/react';
 
-describe('CandidateCard', () => {
-  it('should call onSelect when clicked', () => {
-    const onSelect = jest.fn();
-    const candidate = createMockCandidate({ id: '1' });
+describe('BannerCard', () => {
+  it('should call onEdit when edit button is clicked', () => {
+    const onEdit = jest.fn();
+    const banner = createMockBanner({ id: '1', title: 'Summer Sale' });
 
-    render(<CandidateCard candidate={candidate} onSelect={onSelect} />);
-    fireEvent.click(screen.getByRole('button', { name: /john doe/i }));
+    render(<BannerCard banner={banner} onEdit={onEdit} />);
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
 
-    expect(onSelect).toHaveBeenCalledWith(candidate);
+    expect(onEdit).toHaveBeenCalledWith(banner);
+  });
+
+  it('should render banner title', () => {
+    const banner = createMockBanner({ title: 'Summer Sale' });
+    render(<BannerCard banner={banner} onEdit={jest.fn()} />);
+    expect(screen.getByText('Summer Sale')).toBeInTheDocument();
   });
 });
 ```
 
 ### Test Organization
-- Group by feature: `candidates.cy.ts`, `positions.cy.ts`
+- Group by feature: `banners.cy.ts`, `customers.cy.ts`
 - Test user workflows, not implementation details
 - Never use `cy.wait(ms)` for timing — use `cy.intercept` + `cy.wait('@alias')`
+- Mock SWR fetchers in unit tests — do not make real HTTP calls
 
 ---
 
@@ -342,23 +440,36 @@ describe('CandidateCard', () => {
 - Use `React.memo` for components with stable props that re-render unnecessarily
 - Use `useMemo` for expensive calculations
 - Use `useCallback` for functions passed as props to memoized children
-- Lazy load heavy components: `const Heavy = lazy(() => import('./Heavy'))`
+- Lazy load heavy sections: `const HeavySection = lazy(() => import('./sections/HeavySection'))`
 
 ### Next.js Specific
 - Use `next/image` for all images (automatic optimization)
 - Use `next/font` for web fonts (zero CLS)
-- Prefer Server Components for data fetching; use `'use client'` only where interactivity is needed
+- Prefer Server Components for static content; use `'use client'` only where interactivity or SWR hooks are needed
 
 ### Bundle Size
-- Never import an entire library when you need one function
+- Never import an entire library when you need one export
 - Use tree-shakeable imports: `import { debounce } from 'lodash-es'` not `import _ from 'lodash'`
+- Audit MUI imports — import from the specific subpath when possible
 
 ---
 
 ## Development Workflow
 
+### Running the Apps
+```bash
+# admin (port 3002)
+cd yom-next-b2b   # or the admin repo
+npm run dev
+
+# b2b (port 3006)
+cd yom-seller     # or the b2b repo
+npm run dev
+```
+
 ### Git Workflow
-- Feature branches: `feature/[ticket-id]-frontend`
+- Default branch: `production`
+- Feature branches: `feat/[ticket-id]-description`
 - Bugfix branches: `fix/[ticket-id]-description`
 - Commit messages follow Conventional Commits: `feat:`, `fix:`, `style:`, `test:`, `refactor:`
 
@@ -371,8 +482,8 @@ describe('CandidateCard', () => {
 ### Development Scripts
 ```bash
 npm run dev           # Development server
-npm test              # Unit and component tests
-npm run test:e2e      # Cypress E2E tests
+npm test              # Unit and component tests (Jest + RTL)
+npm run test:e2e      # Cypress E2E tests (headless)
 npm run cypress:open  # Cypress interactive mode
 npm run build         # Production build
 npm run lint          # ESLint
