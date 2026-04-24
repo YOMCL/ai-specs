@@ -36,7 +36,7 @@ Each service owns its own DB:
 | `products` | NestJS | PostgreSQL | Product catalog (relational model) |
 | `yom-api` | Moleculer | MongoDB + PostgreSQL | Core platform data: users, commerces, sellers |
 | `chatbot-api` | NestJS | own schema | Chatbot conversation and configuration data |
-| `hermes` | FastAPI (Python) | own schema | Notification delivery and messaging |
+| `hermes` | Python (peripheral) | own schema | Notification delivery and messaging |
 
 For schema details of each service, see the service's `CLAUDE.md`.
 

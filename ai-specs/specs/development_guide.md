@@ -14,7 +14,7 @@ The YOM workspace lives at `~/Documents/yom/workspace/`. All services are **git 
 ├── backend/
 │   ├── nestjs/             # NestJS microservices
 │   ├── moleculer/          # Moleculer microservices
-│   └── python/             # FastAPI services
+│   └── python/             # Python services (peripheral)
 ├── infra/
 │   ├── local-architecture/ # Docker Compose local environment
 │   └── terraform/          # AWS infrastructure (Terraform modules)
@@ -118,9 +118,9 @@ npm install
 npm run dev
 ```
 
-### FastAPI (hermes)
+### Python — hermes (peripheral)
 
-Refer to the `hermes` service README for Python virtual environment setup.
+Refer to the `hermes` service README for setup. Not part of the core stack.
 
 ---
 

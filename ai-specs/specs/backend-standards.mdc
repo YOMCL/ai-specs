@@ -28,7 +28,7 @@ alwaysApply: true
 
 ## Overview
 
-This document defines the backend development standards for the YOM platform. The platform has two primary backend paradigms: **NestJS microservices** (TypeScript strict, MongoDB+Mongoose, Hexagonal Architecture) and **Moleculer services** (Node.js, NATS autodiscovery). There is also one Python service (hermes, FastAPI). Standards in this document apply primarily to NestJS services unless explicitly noted otherwise.
+This document defines the backend development standards for the YOM platform. The platform has two primary backend paradigms: **NestJS microservices** (TypeScript strict, MongoDB+Mongoose, Hexagonal Architecture) and **Moleculer services** (Node.js, NATS autodiscovery). Standards in this document apply primarily to NestJS services unless explicitly noted otherwise.
 
 ---
 
@@ -55,8 +55,8 @@ Services: `yom-api` (Express+Moleculer, MongoDB+PostgreSQL), `yom-gateway` (API 
 - **Language**: Node.js (JavaScript or TypeScript — follow the existing pattern per service)
 - **Architecture**: Moleculer service patterns — do NOT apply Hexagonal Architecture here
 
-#### Python Service
-- `hermes`: FastAPI — follow Python conventions for this service only
+#### Python Service (peripheral)
+- `hermes`: Python service — not part of the core stack. Maintain its existing conventions independently.
 
 ### Infrastructure
 | Component | Technology | Port |
