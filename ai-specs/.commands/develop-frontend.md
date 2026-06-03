@@ -32,6 +32,7 @@ Implement the UI feature described in the plan or ticket.
 8. Follow all standards in `ai-specs/specs/frontend-standards.mdc`
 9. Update technical documentation as specified in the plan
 10. Run `/ship-it` to stage, commit, push, and create the PR
+   - If you added or changed any HTTP endpoint, ensure it is reflected in the Bruno collection via the **bruno-curator** agent (run automatically by `/ship-it`).
 11. Move the ticket status to **In Review** in Linear using the MCP
 
 ## Architecture & best practices

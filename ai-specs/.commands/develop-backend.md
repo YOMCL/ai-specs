@@ -14,6 +14,7 @@ Follow these steps strictly in order:
 7. Follow all standards in `ai-specs/specs/backend-standards.mdc`
 8. Update technical documentation as specified in the last step of the plan
 9. Run `/ship-it` to stage, commit, push, and create the PR
+   - If you added or changed any HTTP endpoint, ensure it is reflected in the Bruno collection via the **bruno-curator** agent (run automatically by `/ship-it`).
 10. Move the ticket status to **In Review** in Linear using the MCP
 
 TDD Cycle for each step:
