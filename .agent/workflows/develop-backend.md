@@ -17,4 +17,5 @@ Implement backend feature following the plan file.
 * Stage only the files changed by this ticket
 * Commit using Conventional Commits format
 * Push and open a PR linked to the Linear ticket using `gh pr create`
+* If you added or changed any HTTP endpoint, ensure it is reflected in the Bruno collection via the **bruno-curator** agent (run by `/ship-it`).
 * Move the ticket status to **In Review** in Linear using the MCP

@@ -125,6 +125,15 @@ EOF
 
 3. Output the PR URL to the user.
 
+## Phase: Sync Bruno API collection
+
+If this branch **added, removed, or modified any HTTP endpoint** (route, method, path, request body, or
+query params), delegate to the **bruno-curator** agent (`ai-specs/.agents/bruno-curator.md`) — adopt its
+role (or launch it as a subagent) to detect the changed endpoints, generate/update/remove the matching
+Bruno `.yml` files in `local-architecture/api-collections`, validate them, and open a PR against
+`api-collections@main`. Record the returned **api-collections PR URL** for the final summary (and Slack
+notification, if any). Skip this phase if no HTTP endpoints changed.
+
 ## Output
 
 When done, print a summary:
@@ -135,6 +144,7 @@ When done, print a summary:
 📝 Commits: <number of commits created>
 🔗 PR (staging): <pr-url>
 🔗 PR (production): <pr-url>
+🐂 Bruno PR: <bruno-pr-url or "n/a — no endpoint changes">
 ```
 
 ## Phase 6: Notify Slack
