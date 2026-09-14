@@ -22,6 +22,7 @@ alwaysApply: true
 - [Database Patterns](#database-patterns)
 - [Testing Standards](#testing-standards)
 - [Security Best Practices](#security-best-practices)
+- [Observability Coverage](#observability-coverage)
 - [Development Workflow](#development-workflow)
 
 ---
@@ -733,6 +734,46 @@ export class CreateBannerDto {
 
 ---
 
+## Observability Coverage
+
+Log/observability coverage is part of the Definition of Done, at the same tier as tests. A flow with no queryable, truthful event is not done. Services emit through the `@yomcl/observability` library.
+
+### This section carries NO data — only rules and pointers
+
+Event names, Loki labels, redaction stems, the library API and version specifics live in the library and change there. **Do not copy them here.** If a concrete event name, label, version number or API signature ever appears in this section, it is a bug: delete it and link to the source instead. This is what keeps the standard from going stale or drifting from what production actually emits.
+
+Canonical sources (the library is the owner of the contract):
+
+| Need | Source of truth |
+| --- | --- |
+| How to instrument a service / add coverage | `packages/observability/AGENTS.md` (`YOMCL/monorepo`) |
+| What to log — label vs. structured metadata | `packages/observability/docs/logging-conventions.md` |
+| The canonical event catalog | `packages/observability/contracts/event-catalog.md` |
+| How to add or amend an event | `packages/observability/contracts/README.md` |
+| Alerts / runbooks / dashboards that consume the events | `YOMCL/observability` (`docs/runbooks/`, `terraform/modules/alerting/`) |
+
+### When it applies
+
+- A new flow, or a change to an existing flow (a new branch, a new per-client condition).
+- A bug fix that touches a flow: check the flow's logs still tell the truth and fix them in the same change.
+- Remediation: a log that went stale, half-done, or stopped telling the truth is debt to close while you are in that code — not a separate ticket for "later".
+
+### Invariants (repo-agnostic — principles, not data)
+
+- **Emit the canonical event from the library, by its exported constant** — not a local enum or a bare string. The only exception is a `package.json` pinned to a library version too old to export the event: then follow the pinned-version escape hatch documented in the library and leave the ratchet that forces the swap on upgrade.
+- **The event name carries the meaning** — do not add flow-derived or "enriched" fields that restate what the event already says. Prefer default fields that speak for themselves over clever ones.
+- **Observability never breaks the flow** — a logging failure is swallowed, never propagated. Prefer losing a field to complicating the emit path.
+- **Redact PII through the library's redactor**, never a hand-rolled handler.
+- **Comments about logs carry no ticket/PR references** — a comment that can become false without anyone touching this repo does not belong in the code (enforced by the comment-hygiene ratchet where the repo ships one).
+- **Gating and wiring are the library's contract, not yours to reinvent** — whether the emit is gated (`OBS_JSON_LOGS`) and how the broker/request logger is wired differ by framework (Express/NestJS vs. Moleculer). Follow the library's adoption guide for your stack instead of copying another service's plumbing.
+
+### How to verify coverage
+
+- After the change, confirm the event is queryable in Atalaya (Grafana → Loki) for the service and tenant you exercised, using the standard labels defined in `docs/logging-conventions.md`.
+- If the repo ships an obs-emit consistency guard (a spec that fails when a referenced event constant is missing from the installed library), it runs in CI. If it does not, verify manually in Atalaya before marking the task done.
+
+---
+
 ## Development Workflow
 
 ### Git Workflow
@@ -753,6 +794,7 @@ export class CreateBannerDto {
 4. Verify `TOKEN_PACKAGE` is documented in `.env.example` if a new `@yomcl/*` package was added
 5. Update `ai-specs/specs/api-spec.yml` if endpoints changed
 6. Update `ai-specs/specs/data-model.md` if schema changed
+7. Observability coverage — the new/changed flow emits its canonical `@yomcl/observability` event, and any stale log you touched now tells the truth (see [Observability Coverage](#observability-coverage))
 
 ### Development Scripts
 ```bash
