@@ -12,6 +12,7 @@ alwaysApply: true
 - **Incremental Changes**: Prefer incremental, focused changes over large, complex modifications.
 - **Question Assumptions**: Always question assumptions and inferences.
 - **Pattern Detection**: Detect and highlight repeated code patterns.
+- **Observability coverage is part of Definition of Done**: any new or changed flow ships with its structured log/event coverage, and stale or misleading logs on a flow you touch get fixed in the same change. Treat it like tests — not optional. Backend detail and the canonical sources live in [Backend Standards → Observability Coverage](./ai-specs/specs/backend-standards.mdc#observability-coverage).
 
 ## 2. Language Standards
 - **English Only**: All technical artifacts must always use English, including:

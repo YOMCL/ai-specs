@@ -107,5 +107,6 @@ Common steps:
   - Code Quality
   - Functionality
   - Testing (90%+ coverage)
+  - Observability coverage (each new/changed flow emits its canonical `@yomcl/observability` event; stale logs on touched flows fixed — see `backend-standards.mdc` → Observability Coverage)
   - Integration
   - Documentation updates completed
